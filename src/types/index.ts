@@ -1,0 +1,54 @@
+export interface StandardClause {
+  id: string;
+  contractType: "nda" | "saas" | "employment";
+  category: string;
+  clauseName: string;
+  standardText: string;
+  summary: string;
+  embedding: number[];
+  aggressiveIndicators: string[];
+  normalRange: {
+    description: string;
+  };
+}
+
+export interface ExtractedClause {
+  index: number;
+  title: string;
+  text: string;
+  startChar: number;
+  endChar: number;
+}
+
+export type Severity = "green" | "yellow" | "red";
+
+export interface RuleHit {
+  ruleId: string;
+  ruleName: string;
+  severity: Severity;
+  details: string;
+}
+
+export interface ClauseAnalysis {
+  clause: ExtractedClause;
+  bestMatch: {
+    standardClause: StandardClause;
+    similarity: number;
+  } | null;
+  ruleHits: RuleHit[];
+  severity: Severity;
+  explanation?: string;
+  normalVersion?: string;
+}
+
+export interface AnalysisReport {
+  contractType: string;
+  totalClauses: number;
+  summary: {
+    green: number;
+    yellow: number;
+    red: number;
+  };
+  overallRiskScore: number; // 0-100
+  clauses: ClauseAnalysis[];
+}
