@@ -6,12 +6,20 @@ import { StandardClause } from "../src/types";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ─── Standard Clause Templates ───────────────────────────────────────────────
-// These are industry-standard clause texts curated from public templates
-// (YC SAFE, Bonterms, SHRM, SEC EDGAR filings) and legal best practices.
+// Sourced from authoritative, lawyer-drafted, open-source contract standards:
+//   - Common Paper Mutual NDA v1.0 (CC BY 4.0) — 40+ attorney committee
+//   - Bonterms Cloud Terms v1.0 (CC BY 4.0) — 120+ lawyer committee
+//   - Manual entries clearly marked, modeled on established legal practice
+//
+// See: https://commonpaper.com/standards/mutual-nda/
+//      https://github.com/Bonterms/Cloud-Terms
 
-const rawStandards: Omit<StandardClause, "embedding">[] = [
+type RawStandard = Omit<StandardClause, "embedding">;
+
+const rawStandards: RawStandard[] = [
   // ═══════════════════════════════════════════════════════════════════════════
-  // NDA CLAUSES
+  // NDA CLAUSES — Source: Common Paper Mutual NDA v1.0
+  // https://github.com/CommonPaper/Mutual-NDA
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: "nda-definition-001",
@@ -19,59 +27,74 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Definitions",
     clauseName: "Definition of Confidential Information",
     standardText:
-      '"Confidential Information" means any non-public information disclosed by the Disclosing Party to the Receiving Party, whether orally, in writing, or by inspection, that is designated as confidential or that reasonably should be understood to be confidential given the nature of the information and the circumstances of disclosure. Confidential Information includes, but is not limited to, trade secrets, business plans, financial data, customer lists, technical specifications, and product roadmaps.',
+      'This Mutual Non-Disclosure Agreement allows each party ("Disclosing Party") to disclose or make available information in connection with the Purpose which (1) the Disclosing Party identifies to the receiving party ("Receiving Party") as "confidential", "proprietary", or the like or (2) should be reasonably understood as confidential or proprietary due to its nature and the circumstances of its disclosure ("Confidential Information"). Each party\'s Confidential Information also includes the existence and status of the parties\' discussions and information on the Cover Page. Confidential Information includes technical or business information, product designs or roadmaps, requirements, pricing, security and compliance documentation, technology, inventions and know-how.',
     summary:
-      "Defines what counts as confidential information. Standard definitions cover non-public info disclosed in any form, with a reasonableness standard.",
+      "Defines confidential information as anything marked confidential or reasonably understood to be confidential. Includes technical info, business plans, pricing, and the existence of discussions.",
     aggressiveIndicators: ["all information", "any information whatsoever", "without limitation"],
-    normalRange: { description: "Should cover non-public info with a reasonableness test and specific examples." },
+    normalRange: { description: "Should cover non-public info with a reasonableness test and specific examples. Overly broad definitions that cover 'all information' are aggressive." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §1",
+    role: "anchor",
   },
   {
     id: "nda-obligations-001",
     contractType: "nda",
     category: "Obligations",
-    clauseName: "Obligations of Receiving Party",
+    clauseName: "Use and Protection of Confidential Information",
     standardText:
-      'The Receiving Party shall: (a) hold the Confidential Information in strict confidence; (b) not disclose the Confidential Information to any third party without the prior written consent of the Disclosing Party, except to its employees, contractors, and advisors who have a need to know and are bound by confidentiality obligations at least as protective as those in this Agreement; (c) use the Confidential Information solely for the Purpose; and (d) protect the Confidential Information using the same degree of care it uses to protect its own confidential information, but in no event less than reasonable care.',
+      "The Receiving Party shall: (a) use Confidential Information solely for the Purpose; (b) not disclose Confidential Information to third parties without the Disclosing Party's prior written approval, except that the Receiving Party may disclose Confidential Information to its employees, agents, advisors, contractors and other representatives having a reasonable need to know for the Purpose, provided these representatives are bound by confidentiality obligations no less protective of the Disclosing Party than the applicable terms in this MNDA and the Receiving Party remains responsible for their compliance with this MNDA; and (c) protect Confidential Information using at least the same protections the Receiving Party uses for its own similar information but no less than a reasonable standard of care.",
     summary:
-      "Receiving party must keep info confidential, limit disclosure to need-to-know personnel, and use reasonable care.",
-    aggressiveIndicators: ["absolute secrecy", "guarantee", "strictly liable"],
-    normalRange: { description: "Reasonable care standard with need-to-know exceptions for employees and advisors." },
+      "Receiving party must use info only for the stated purpose, limit disclosure to need-to-know personnel bound by confidentiality, and protect it with at least reasonable care.",
+    aggressiveIndicators: ["absolute secrecy", "guarantee", "strictly liable", "no disclosure under any circumstances"],
+    normalRange: { description: "Reasonable care standard with need-to-know exceptions for employees and advisors is standard. Absolute secrecy requirements or strict liability are aggressive." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §2",
+    role: "anchor",
   },
   {
     id: "nda-exclusions-001",
     contractType: "nda",
     category: "Exclusions",
-    clauseName: "Exclusions from Confidential Information",
+    clauseName: "Exceptions to Confidentiality",
     standardText:
-      "Confidential Information does not include information that: (a) is or becomes publicly available through no fault of the Receiving Party; (b) was already in the Receiving Party's possession before receipt from the Disclosing Party, as evidenced by written records; (c) is independently developed by the Receiving Party without use of or reference to the Confidential Information; or (d) is rightfully received from a third party without restriction on disclosure.",
+      "The Receiving Party's obligations in this MNDA do not apply to information that it can demonstrate: (a) is or becomes publicly available through no fault of the Receiving Party; (b) it rightfully knew or possessed prior to receipt from the Disclosing Party without confidentiality restrictions; (c) it rightfully obtained from a third party without confidentiality restrictions; or (d) it independently developed without using or referencing the Confidential Information.",
     summary:
-      "Standard carve-outs: public info, prior knowledge, independent development, and third-party sources.",
+      "Four standard exceptions: public information, prior knowledge, third-party receipt, and independent development. All require the receiving party to demonstrate the exception applies.",
     aggressiveIndicators: [],
-    normalRange: { description: "Should include all four standard exclusions. Missing exclusions are a red flag." },
+    normalRange: { description: "All four standard exclusions should be present. Missing exclusions significantly tilt the agreement against the receiving party." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §3",
+    role: "anchor",
   },
   {
     id: "nda-compelled-disclosure-001",
     contractType: "nda",
-    category: "Exclusions",
-    clauseName: "Compelled Disclosure",
+    category: "Required Disclosures",
+    clauseName: "Disclosures Required by Law",
     standardText:
-      "If the Receiving Party is compelled by law, regulation, or court order to disclose Confidential Information, the Receiving Party shall: (a) provide prompt written notice to the Disclosing Party, to the extent legally permitted; (b) cooperate with the Disclosing Party in seeking a protective order or other appropriate remedy; and (c) disclose only that portion of the Confidential Information that is legally required to be disclosed.",
+      "The Receiving Party may disclose Confidential Information to the extent required by law, regulation or regulatory authority, subpoena or court order, provided (to the extent legally permitted) it provides the Disclosing Party reasonable advance notice of the required disclosure and reasonably cooperates, at the Disclosing Party's expense, with the Disclosing Party's efforts to obtain confidential treatment for the Confidential Information.",
     summary:
-      "Allows disclosure when legally required, with notice to the disclosing party and minimal disclosure.",
+      "Allows disclosure when legally compelled (court orders, subpoenas, regulations), with advance notice and cooperation to seek protective treatment.",
     aggressiveIndicators: [],
-    normalRange: { description: "Must allow compelled disclosure with notice and cooperation provisions." },
+    normalRange: { description: "Must allow legally compelled disclosure. Should include notice requirement and cooperation provisions. Absence of this carve-out is a major red flag." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §4",
+    role: "anchor",
   },
   {
     id: "nda-term-001",
     contractType: "nda",
     category: "Term",
-    clauseName: "Term and Duration",
+    clauseName: "Term and Termination",
     standardText:
-      "This Agreement shall remain in effect for a period of two (2) years from the Effective Date (the \"Term\"). The confidentiality obligations set forth herein shall survive the expiration or termination of this Agreement for a period of three (3) years following such expiration or termination.",
+      "This MNDA commences on the Effective Date and expires at the end of the MNDA Term. Either party may terminate this MNDA for any or no reason upon written notice to the other party. The Receiving Party's obligations relating to Confidential Information will survive for the Term of Confidentiality, despite any expiration or termination of this MNDA.",
     summary:
-      "NDA lasts 2 years, with confidentiality obligations surviving for 3 years after termination.",
-    aggressiveIndicators: ["perpetual", "indefinite", "in perpetuity", "forever"],
-    normalRange: { description: "Term of 1-3 years with survival period of 2-5 years. Perpetual obligations are unusual." },
+      "Either party can terminate the NDA at any time with written notice. Confidentiality obligations survive termination for the specified survival period.",
+    aggressiveIndicators: ["perpetual", "indefinite", "in perpetuity", "forever", "irrevocable"],
+    normalRange: { description: "Term of 1-3 years with a confidentiality survival period of 2-5 years is standard. Perpetual or indefinite obligations are unusual." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §5",
+    role: "anchor",
   },
   {
     id: "nda-return-001",
@@ -79,23 +102,29 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Return of Information",
     clauseName: "Return or Destruction of Confidential Information",
     standardText:
-      "Upon the expiration or termination of this Agreement, or upon written request by the Disclosing Party, the Receiving Party shall promptly return or destroy all copies of the Confidential Information in its possession or control, and shall certify such return or destruction in writing. Notwithstanding the foregoing, the Receiving Party may retain copies of Confidential Information to the extent required by applicable law or regulation, or as part of its routine backup procedures, provided that such retained information remains subject to the confidentiality obligations of this Agreement.",
+      "Upon expiration or termination of this MNDA or upon the Disclosing Party's earlier request, the Receiving Party will: (a) cease using Confidential Information; (b) promptly after the Disclosing Party's written request, destroy all Confidential Information in the Receiving Party's possession or control or return it to the Disclosing Party; and (c) if requested by the Disclosing Party, confirm its compliance with these obligations in writing. As an exception to subsection (b), the Receiving Party may retain Confidential Information in accordance with its standard backup or record retention policies or as required by law, but the terms of this MNDA will continue to apply to the retained Confidential Information.",
     summary:
-      "After NDA ends, return or destroy confidential materials. Standard exception for legally required retention.",
-    aggressiveIndicators: ["immediately destroy all", "no retention", "no copies whatsoever"],
-    normalRange: { description: "Return or destroy with certification. Should allow retention for legal compliance and backups." },
+      "After termination, cease use and return or destroy confidential materials upon request, with written confirmation. Standard exception for legal retention and routine backups.",
+    aggressiveIndicators: ["immediately destroy all", "no retention", "no copies whatsoever", "no backups"],
+    normalRange: { description: "Return or destroy with written confirmation. Should allow retention for legal compliance and standard backup procedures." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §6",
+    role: "anchor",
   },
   {
     id: "nda-remedies-001",
     contractType: "nda",
     category: "Remedies",
-    clauseName: "Remedies for Breach",
+    clauseName: "Equitable Relief",
     standardText:
-      "The Receiving Party acknowledges that a breach of this Agreement may cause irreparable harm to the Disclosing Party for which monetary damages may not be an adequate remedy. Accordingly, the Disclosing Party shall be entitled to seek equitable relief, including injunction and specific performance, in addition to all other remedies available at law or in equity, without the necessity of proving actual damages or posting a bond.",
+      "A breach of this MNDA may cause irreparable harm for which monetary damages are an insufficient remedy. Upon a breach of this MNDA, the Disclosing Party is entitled to seek appropriate equitable relief, including an injunction, in addition to its other remedies.",
     summary:
-      "Allows the disclosing party to seek injunctive relief for breaches, in addition to monetary damages.",
-    aggressiveIndicators: ["liquidated damages", "penalty", "forfeiture"],
-    normalRange: { description: "Injunctive relief without requiring proof of damages. Liquidated damages are unusual in NDAs." },
+      "Allows the disclosing party to seek injunctive relief (court orders to stop the breach) in addition to monetary damages, without needing to prove damages first.",
+    aggressiveIndicators: ["liquidated damages", "penalty", "forfeiture", "automatic termination fee"],
+    normalRange: { description: "Equitable relief (injunctions) without requiring proof of damages is standard. Liquidated damages or financial penalties are unusual in NDAs." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §10",
+    role: "anchor",
   },
   {
     id: "nda-nonsolicitation-001",
@@ -103,11 +132,14 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Non-Solicitation",
     clauseName: "Non-Solicitation of Employees",
     standardText:
-      "During the Term and for a period of twelve (12) months following the expiration or termination of this Agreement, neither Party shall directly solicit for employment any employee of the other Party with whom it had contact in connection with the Purpose, without the prior written consent of the other Party. This restriction shall not apply to general solicitations of employment not specifically directed at employees of the other Party.",
+      "During the term of this Agreement and for a period of twelve (12) months following its expiration or termination, neither Party shall directly solicit for employment any employee of the other Party with whom it had contact in connection with the Purpose, without the prior written consent of the other Party. This restriction shall not apply to general solicitations of employment not specifically directed at employees of the other Party, including public job postings.",
     summary:
-      "Mutual non-solicitation of employees for 12 months. Allows general job postings.",
-    aggressiveIndicators: ["all employees", "any personnel", "24 months", "36 months"],
-    normalRange: { description: "6-12 months, mutual, limited to employees with direct contact. Should exclude general job postings." },
+      "Mutual non-solicitation of employees for 12 months, limited to employees with direct contact. General job postings are allowed.",
+    aggressiveIndicators: ["all employees", "any personnel", "24 months", "36 months", "worldwide"],
+    normalRange: { description: "6-12 months, mutual, limited to employees with direct contact. Should exclude general job postings. Broader restrictions are unusual." },
+    source: "manual",
+    sourceRef: "Based on standard NDA non-solicitation practice",
+    role: "anchor",
   },
   {
     id: "nda-governing-law-001",
@@ -115,27 +147,34 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Governing Law",
     clauseName: "Governing Law and Jurisdiction",
     standardText:
-      "This Agreement shall be governed by and construed in accordance with the laws of the State of [State], without regard to its conflict of laws principles. Any dispute arising out of or relating to this Agreement shall be submitted to the exclusive jurisdiction of the state and federal courts located in [County], [State].",
+      "This MNDA and all matters relating hereto are governed by, and construed in accordance with, the laws of the applicable state, without regard to the conflict of laws provisions thereof. Any legal suit, action, or proceeding relating to this MNDA must be instituted in the federal or state courts located in the agreed-upon jurisdiction. Each party irrevocably submits to the exclusive jurisdiction of such courts in any such suit, action, or proceeding.",
     summary:
-      "Specifies which state's laws apply and where disputes will be resolved.",
+      "Specifies which state's laws apply and which courts have exclusive jurisdiction over disputes.",
     aggressiveIndicators: [],
-    normalRange: { description: "Should specify a reasonable jurisdiction. Watch for distant or inconvenient venues." },
+    normalRange: { description: "Should specify a reasonable jurisdiction convenient for both parties. Watch for distant or inconvenient venues that favor one party." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §9",
+    role: "anchor",
   },
   {
     id: "nda-amendment-001",
     contractType: "nda",
     category: "Amendment",
-    clauseName: "Amendment and Waiver",
+    clauseName: "Amendment, Waiver, and Entire Agreement",
     standardText:
-      "This Agreement may not be amended, modified, or supplemented except by a written instrument signed by both Parties. No waiver of any provision of this Agreement shall be effective unless in writing and signed by the waiving Party. The failure of either Party to enforce any provision of this Agreement shall not be construed as a waiver of such provision or the right to enforce it at a later time.",
+      "This MNDA constitutes the entire agreement of the parties with respect to its subject matter, and supersedes all prior and contemporaneous understandings, agreements, representations, and warranties, whether written or oral, regarding such subject matter. This MNDA may only be amended, modified, waived, or supplemented by an agreement in writing signed by both parties. Waivers must be signed by the waiving party's authorized representative and cannot be implied from conduct. Neither party may assign this MNDA without the prior written consent of the other party, except that either party may assign this MNDA in connection with a merger, reorganization, acquisition or other transfer of all or substantially all its assets or voting securities.",
     summary:
-      "Changes require written agreement from both parties. Not enforcing a clause doesn't mean waiving it.",
-    aggressiveIndicators: ["sole discretion", "unilaterally", "at any time without notice"],
-    normalRange: { description: "Mutual written consent required. Unilateral amendment rights are a major red flag." },
+      "This is the complete agreement; changes require mutual written consent. Waivers must be explicit. Assignment allowed for mergers/acquisitions without consent.",
+    aggressiveIndicators: ["sole discretion", "unilaterally", "at any time without notice", "by posting on website"],
+    normalRange: { description: "Mutual written consent required for amendments. Unilateral amendment rights are a major red flag. Assignment carve-out for M&A is standard." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §11",
+    role: "anchor",
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SAAS AGREEMENT CLAUSES
+  // SAAS AGREEMENT CLAUSES — Source: Bonterms Cloud Terms v1.0
+  // https://github.com/Bonterms/Cloud-Terms
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: "saas-term-001",
@@ -143,11 +182,14 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Term",
     clauseName: "Term and Renewal",
     standardText:
-      'This Agreement shall commence on the Effective Date and continue for an initial term of one (1) year (the "Initial Term"). Thereafter, this Agreement shall automatically renew for successive one (1) year periods (each, a "Renewal Term"), unless either Party provides written notice of non-renewal at least thirty (30) days prior to the end of the then-current term.',
+      "Each Subscription Term will last for an initial twelve (12) month period unless the Order states otherwise. Each Subscription Term will renew for successive periods unless (a) the parties agree on a different renewal Order or (b) either party notifies the other of non-renewal at least thirty (30) days prior to the end of the then-current Subscription Term.",
     summary:
-      "1-year initial term with automatic annual renewal. Either party can opt out with 30 days notice.",
-    aggressiveIndicators: ["irrevocable", "non-cancellable", "minimum commitment of 3 years"],
-    normalRange: { description: "1-year terms with 30-90 day notice for non-renewal are standard." },
+      "12-month initial term with automatic renewal. Either party can opt out with 30 days notice before the term ends.",
+    aggressiveIndicators: ["irrevocable", "non-cancellable", "minimum commitment of 3 years", "no termination"],
+    normalRange: { description: "1-year terms with 30-90 day notice for non-renewal are standard. Multi-year lock-ins without opt-out are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §14.1",
+    role: "anchor",
   },
   {
     id: "saas-termination-convenience-001",
@@ -155,11 +197,14 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Termination",
     clauseName: "Termination for Convenience",
     standardText:
-      "Either Party may terminate this Agreement for convenience upon sixty (60) days' prior written notice to the other Party. In the event of termination for convenience by Customer, Provider shall refund any prepaid fees covering the remainder of the term after the effective date of termination on a pro-rata basis.",
+      "This Agreement starts on the Effective Date and continues until the end of all Subscription Terms, unless sooner terminated in accordance with its terms. If no Subscription Term is in effect, either party may terminate this Agreement for any or no reason with notice to the other party. Either party may terminate by providing written notice of non-renewal at least thirty (30) days prior to the end of the current Subscription Term.",
     summary:
-      "Either party can cancel with 60 days notice. Customer gets a pro-rata refund of prepaid fees.",
-    aggressiveIndicators: ["no refund", "non-refundable", "immediately", "sole discretion"],
-    normalRange: { description: "30-90 day notice, mutual right, pro-rata refund of prepaid fees." },
+      "Agreement runs until all subscriptions end. Either party can decline to renew with 30 days notice. Full termination for convenience available when no active subscription exists.",
+    aggressiveIndicators: ["no refund", "non-refundable", "sole discretion", "immediately without notice"],
+    normalRange: { description: "30-90 day notice for non-renewal is standard. Mid-term cancellation may or may not include pro-rata refunds depending on the agreement." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §14.1-14.2",
+    role: "anchor",
   },
   {
     id: "saas-termination-cause-001",
@@ -167,11 +212,14 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Termination",
     clauseName: "Termination for Cause",
     standardText:
-      "Either Party may terminate this Agreement for cause: (a) upon thirty (30) days' written notice of a material breach, if such breach remains uncured at the expiration of such notice period; or (b) immediately upon written notice if the other Party becomes the subject of a petition in bankruptcy or any proceeding relating to insolvency, receivership, or liquidation that is not dismissed within sixty (60) days.",
+      "Either party may terminate this Agreement (including all Subscription Terms) if the other party (a) fails to cure a material breach of this Agreement within 30 days after notice, (b) ceases operation without a successor or (c) seeks protection under a bankruptcy, receivership, trust deed, creditors' arrangement, composition or comparable proceeding, or if such a proceeding is instituted against that party and not dismissed within 60 days.",
     summary:
-      "Either party can terminate for material breach with 30 days to cure. Immediate termination for bankruptcy.",
-    aggressiveIndicators: ["immediately without cure", "sole determination", "any breach"],
-    normalRange: { description: "30-day cure period for material breach is standard. Immediate termination only for bankruptcy/insolvency." },
+      "Either party can terminate for material breach (with 30-day cure period), cessation of operations, or bankruptcy proceedings not dismissed within 60 days.",
+    aggressiveIndicators: ["immediately without cure", "sole determination", "any breach", "minor breach"],
+    normalRange: { description: "30-day cure period for material breach is standard. Immediate termination only for bankruptcy/insolvency. Termination for 'any breach' without cure is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §14.3",
+    role: "anchor",
   },
   {
     id: "saas-liability-001",
@@ -179,11 +227,14 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Liability",
     clauseName: "Limitation of Liability",
     standardText:
-      'IN NO EVENT SHALL EITHER PARTY\'S AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THIS AGREEMENT EXCEED THE TOTAL AMOUNTS PAID OR PAYABLE BY CUSTOMER DURING THE TWELVE (12) MONTH PERIOD IMMEDIATELY PRECEDING THE EVENT GIVING RISE TO THE CLAIM (THE "LIABILITY CAP"). IN NO EVENT SHALL EITHER PARTY BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, LOSS OF DATA, OR BUSINESS INTERRUPTION, REGARDLESS OF THE THEORY OF LIABILITY.',
+      "Each party's entire liability arising out of or related to this Agreement will not exceed amounts paid or payable by Customer to Provider under this Agreement in the 12 months immediately preceding the first incident giving rise to liability (the \"General Cap\"). Neither party will have any liability arising out of or related to this Agreement for indirect, special, incidental, reliance or consequential damages or damages for loss of use, lost profits or interruption of business, even if informed of their possibility in advance. The waivers and limitations in this section apply regardless of the form of action, whether in contract, tort (including negligence), strict liability or otherwise and will survive and apply even if any limited remedy in this Agreement fails of its essential purpose.",
     summary:
-      "Liability capped at 12 months of fees. No liability for indirect/consequential damages.",
+      "Liability capped at 12 months of fees paid. No liability for indirect, consequential, or lost-profit damages. Applies regardless of legal theory.",
     aggressiveIndicators: ["unlimited liability", "no limit", "10x", "without limitation as to amount"],
-    normalRange: { description: "Liability cap of 12 months of fees is standard. Some agreements use 1x-2x annual fees." },
+    normalRange: { description: "Liability cap of 12 months of fees (1x annual contract value) is standard. Some agreements use enhanced caps (2-3x) for specific claims like data breaches." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §16.1-16.2, §16.4",
+    role: "anchor",
   },
   {
     id: "saas-indemnification-001",
@@ -191,23 +242,29 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Indemnification",
     clauseName: "Mutual Indemnification",
     standardText:
-      "Each Party (the \"Indemnifying Party\") shall defend, indemnify, and hold harmless the other Party and its officers, directors, employees, and agents (the \"Indemnified Party\") from and against any third-party claims, damages, losses, and expenses (including reasonable attorneys' fees) arising out of: (a) the Indemnifying Party's breach of this Agreement; or (b) the Indemnifying Party's negligence or willful misconduct. Provider shall additionally indemnify Customer against any third-party claim that the Service infringes a valid patent, copyright, or trademark.",
+      "Provider, at its own cost, will defend Customer from and against any third-party claim that the Cloud Service, when used by Customer as authorized in this Agreement, infringes or misappropriates a third party's intellectual property rights, and will indemnify and hold harmless Customer from and against any damages or costs awarded against Customer (including reasonable attorneys' fees) or agreed in settlement by Provider. Customer, at its own cost, will defend Provider from and against any third-party claim arising from Customer's breach of usage rules or submission of unauthorized content, and will indemnify and hold harmless Provider from resulting damages or costs. The indemnifying party's obligations are subject to receiving from the indemnified party: (a) prompt notice of the claim, (b) the exclusive right to control the claim's investigation, defense and settlement and (c) reasonable cooperation at the indemnifying party's expense.",
     summary:
-      "Both parties indemnify each other for breaches and negligence. Provider additionally covers IP infringement claims.",
-    aggressiveIndicators: ["sole expense", "all costs", "unlimited indemnification"],
-    normalRange: { description: "Mutual indemnification is standard. Provider should cover IP infringement." },
+      "Provider covers IP infringement claims; Customer covers misuse claims. Standard procedure: prompt notice, exclusive control of defense, and cooperation.",
+    aggressiveIndicators: ["sole expense", "all costs", "unlimited indemnification", "any claim whatsoever"],
+    normalRange: { description: "Mutual indemnification is standard. Provider should cover IP infringement. Indemnification procedures (notice, control, cooperation) should be specified." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §17.1-17.4",
+    role: "anchor",
   },
   {
     id: "saas-data-protection-001",
     contractType: "saas",
     category: "Data Protection",
-    clauseName: "Data Protection and Privacy",
+    clauseName: "Data Protection and Security",
     standardText:
-      "Provider shall implement and maintain reasonable administrative, technical, and organizational security measures to protect Customer Data against unauthorized access, loss, or alteration. Provider shall process Customer Data solely for the purpose of providing the Service and in accordance with Customer's instructions. Provider shall promptly notify Customer of any data breach affecting Customer Data, and in no event later than seventy-two (72) hours after becoming aware of such breach.",
+      "Provider will access and use Customer Data solely to provide and maintain the Cloud Service, Support and Professional Services under this Agreement. Provider will not otherwise disclose Customer Data to third parties except as this Agreement permits. Provider will implement and maintain appropriate technical and organizational security measures preventing unauthorized access, use, alteration or disclosure of Customer Data. The parties will adhere to the Data Protection Addendum (DPA), if any, identified on the Cover Page.",
     summary:
-      "Provider must protect customer data with reasonable security, only process it for the service, and notify within 72 hours of any breach.",
-    aggressiveIndicators: ["no liability for data loss", "as-is", "no security guarantees"],
-    normalRange: { description: "Reasonable security measures, purpose limitation, 72-hour breach notification." },
+      "Provider can only use customer data to deliver the service. Must maintain appropriate security measures. Data processing governed by DPA if applicable.",
+    aggressiveIndicators: ["no liability for data loss", "as-is", "no security guarantees", "may share with third parties"],
+    normalRange: { description: "Purpose limitation on data use, appropriate security measures, and DPA for personal data are all standard requirements." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §5.1-5.3",
+    role: "anchor",
   },
   {
     id: "saas-sla-001",
@@ -215,11 +272,14 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "SLA",
     clauseName: "Service Level Agreement",
     standardText:
-      'Provider shall use commercially reasonable efforts to maintain the Service availability of at least 99.9% uptime during each calendar month, measured as total minutes in the month minus downtime minutes, divided by total minutes in the month ("Uptime Percentage"). Scheduled maintenance windows shall be excluded from downtime calculations, provided that Provider gives Customer at least forty-eight (48) hours advance notice. If the Uptime Percentage falls below 99.9% in any calendar month, Customer shall be entitled to service credits as set forth in the SLA Policy.',
+      "Provider will adhere to the Service Level Agreement (SLA) identified on the Cover Page. If no SLA is identified, Provider will use commercially reasonable efforts to make the Cloud Service available for Customer's use 99.9% of the time in each month. Provider will provide Support for the Cloud Service consistent with industry standards and its general business practices.",
     summary:
-      "99.9% uptime guarantee with service credits for downtime. Scheduled maintenance excluded with 48h notice.",
-    aggressiveIndicators: ["best efforts", "no guarantee", "no service credits", "no uptime commitment"],
-    normalRange: { description: "99.5-99.99% uptime with service credits. Scheduled maintenance excluded with advance notice." },
+      "99.9% monthly uptime target with commercially reasonable efforts. Support provided per industry standards or specified support policy.",
+    aggressiveIndicators: ["best efforts", "no guarantee", "no service credits", "no uptime commitment", "as available"],
+    normalRange: { description: "99.5-99.99% uptime commitment with service credits for downtime is standard. 'Best efforts' or 'as available' without concrete targets are weak." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §7.1-7.2",
+    role: "anchor",
   },
   {
     id: "saas-payment-001",
@@ -227,23 +287,29 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Payment",
     clauseName: "Payment Terms",
     standardText:
-      "Customer shall pay all fees specified in the applicable Order Form. Unless otherwise stated, fees are due within thirty (30) days of the invoice date. All fees are stated in U.S. dollars and are non-cancellable and non-refundable except as expressly set forth herein. Late payments shall accrue interest at the lesser of 1.5% per month or the maximum rate permitted by applicable law.",
+      "Customer will pay the fees described in the Order. Unless the Order states otherwise, all amounts are due within thirty (30) days after the invoice date. Late payments are subject to a charge of 1.5% per month or the maximum amount allowed by law, whichever is less. All fees and expenses are non-refundable except as expressly set out in this Agreement. Customer is responsible for any sales, use, GST, value-added, withholding or similar taxes or levies that apply to its Orders, other than Provider's income tax.",
     summary:
-      "Net 30 payment terms. Late payments accrue 1.5% monthly interest.",
-    aggressiveIndicators: ["due immediately", "net 120", "5% per month", "accelerated payment"],
-    normalRange: { description: "Net 30 to Net 60 is standard. Late interest of 1-1.5% per month is typical." },
+      "Net 30 payment terms. Late payments accrue 1.5% monthly interest. Customer responsible for applicable taxes (excluding provider's income tax).",
+    aggressiveIndicators: ["due immediately", "net 120", "5% per month", "accelerated payment", "pay all future fees"],
+    normalRange: { description: "Net 30 to Net 60 is standard. Late interest of 1-1.5% per month is typical. Customer tax responsibility (excluding provider income tax) is standard." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §12.1-12.2",
+    role: "anchor",
   },
   {
     id: "saas-ip-001",
     contractType: "saas",
     category: "IP Ownership",
-    clauseName: "Intellectual Property Ownership",
+    clauseName: "Intellectual Property and Reserved Rights",
     standardText:
-      "As between the Parties, Provider retains all right, title, and interest in and to the Service, including all related intellectual property rights. Customer retains all right, title, and interest in and to Customer Data. Provider shall not acquire any rights in Customer Data except the limited license to process Customer Data solely for the purpose of providing the Service. Any feedback, suggestions, or recommendations provided by Customer regarding the Service shall be the property of Provider.",
+      "Neither party grants the other any rights or licenses not expressly set out in this Agreement. Except for Provider's express rights in this Agreement, as between the parties, Customer retains all intellectual property and other rights in Customer Data and Customer Materials provided to Provider. Except for Customer's express rights in this Agreement, as between the parties, Provider and its licensors retain all intellectual property and other rights in the Cloud Service, Professional Services deliverables and related Provider technology. If Customer gives Provider feedback regarding improvement or operation of the Cloud Service, Provider may use the feedback without restriction or obligation.",
     summary:
-      "Provider owns the service/platform. Customer owns their data. Provider gets rights to general feedback.",
-    aggressiveIndicators: ["all data becomes property of", "exclusive license to customer data", "perpetual license to customer data"],
-    normalRange: { description: "Clear separation: provider owns service, customer owns data. Feedback assignment is standard." },
+      "Clear IP separation: Customer owns their data, Provider owns the service and technology. Provider gets unrestricted rights to use customer feedback.",
+    aggressiveIndicators: ["all data becomes property of", "exclusive license to customer data", "perpetual license to customer data", "provider owns customer data"],
+    normalRange: { description: "Clear separation: provider owns service, customer owns data. Feedback assignment to provider is standard. Any claim to customer data ownership is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §15.1-15.2",
+    role: "anchor",
   },
   {
     id: "saas-confidentiality-001",
@@ -251,23 +317,29 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Confidentiality",
     clauseName: "Confidentiality",
     standardText:
-      "Each Party agrees to hold in confidence all Confidential Information of the other Party and not to disclose such information to any third party except as expressly permitted herein. Each Party shall use the same degree of care to protect the other Party's Confidential Information as it uses to protect its own confidential information, but in no event less than reasonable care. The confidentiality obligations shall survive termination of this Agreement for a period of three (3) years.",
+      "As recipient, each party will (a) use Confidential Information only to fulfill its obligations and exercise its rights under this Agreement, (b) not disclose Confidential Information to third parties without the discloser's prior approval, except as permitted in this Agreement and (c) protect Confidential Information using at least the same precautions recipient uses for its own similar information and no less than a reasonable standard of care. The recipient may disclose Confidential Information to its employees, agents, contractors and other representatives having a legitimate need to know, provided it remains responsible for their compliance and they are bound to confidentiality obligations no less protective than this section. These confidentiality obligations do not apply to information that the recipient can document (a) is or becomes public knowledge through no fault of the recipient, (b) it rightfully knew or possessed prior to receipt, (c) it rightfully received from a third party without restrictions or (d) it independently developed without using Confidential Information.",
     summary:
-      "Mutual confidentiality with reasonable care standard. Obligations survive 3 years after termination.",
-    aggressiveIndicators: ["perpetual", "indefinite", "absolute secrecy"],
-    normalRange: { description: "Mutual, reasonable care standard, 2-5 year survival period." },
+      "Mutual confidentiality with reasonable care standard. Disclosure limited to need-to-know personnel. Standard four exceptions apply (public info, prior knowledge, third-party receipt, independent development).",
+    aggressiveIndicators: ["perpetual", "indefinite", "absolute secrecy", "no exceptions"],
+    normalRange: { description: "Mutual, reasonable care standard, need-to-know disclosure, all four standard exceptions. Survival period of 2-5 years after termination is typical." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §18.1-18.3",
+    role: "anchor",
   },
   {
     id: "saas-warranty-001",
     contractType: "saas",
     category: "Warranty",
-    clauseName: "Warranty and Disclaimer",
+    clauseName: "Warranties and Disclaimers",
     standardText:
-      'Provider warrants that the Service shall perform materially in accordance with the applicable documentation during the subscription term. EXCEPT AS EXPRESSLY SET FORTH HEREIN, THE SERVICE IS PROVIDED "AS IS" AND PROVIDER DISCLAIMS ALL OTHER WARRANTIES, WHETHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.',
+      "Each party represents and warrants that: (a) it has the legal power and authority to enter into this Agreement, and (b) it will use industry-standard measures to avoid introducing Viruses into the Cloud Service. Provider warrants that the Cloud Service will perform materially in accordance with the Documentation and Provider will not materially decrease the overall functionality of the Cloud Service during a Subscription Term. Except as expressly set out in this Agreement, each party disclaims all warranties, whether express, implied, statutory or otherwise, including warranties of merchantability, fitness for a particular purpose, title and noninfringement. These disclaimers apply to the full extent permitted by law.",
     summary:
-      "Provider warrants the service works as documented. Standard disclaimer of all other warranties.",
-    aggressiveIndicators: ["no warranty whatsoever", "entire risk", "use at your own risk"],
-    normalRange: { description: "Material conformance with documentation is the standard warranty for SaaS." },
+      "Provider warrants the service works as documented and won't reduce functionality mid-term. Standard disclaimer of all implied warranties (merchantability, fitness, etc.).",
+    aggressiveIndicators: ["no warranty whatsoever", "entire risk", "use at your own risk", "no documentation warranty"],
+    normalRange: { description: "Material conformance with documentation is the standard warranty. Disclaimer of implied warranties is universal in SaaS. Complete absence of ANY warranty is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §8.1-8.2, §8.4",
+    role: "anchor",
   },
   {
     id: "saas-force-majeure-001",
@@ -275,11 +347,14 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Force Majeure",
     clauseName: "Force Majeure",
     standardText:
-      "Neither Party shall be liable for any failure or delay in performing its obligations under this Agreement where such failure or delay results from circumstances beyond the reasonable control of that Party, including but not limited to acts of God, natural disasters, war, terrorism, riots, embargoes, acts of civil or military authorities, fire, floods, epidemics, strikes, or failures of third-party telecommunications or power supply. The affected Party shall promptly notify the other Party and use commercially reasonable efforts to mitigate the impact.",
+      "Neither party is liable for a delay or failure to perform this Agreement due to a Force Majeure. \"Force Majeure\" means an unforeseen event beyond a party's reasonable control, such as a strike, blockade, war, pandemic, act of terrorism, riot, third-party Internet or utility failure, refusal of government license or natural disaster, where the affected party takes reasonable and customary measures to avoid or mitigate such event's effects. If a Force Majeure materially adversely affects the Cloud Service for 15 or more consecutive days, either party may terminate the affected Orders upon notice to the other and Provider will refund to Customer any pre-paid, unused fees for the terminated portion of the Subscription Term.",
     summary:
-      "Neither party is liable for failures caused by events beyond their control (natural disasters, war, etc.).",
+      "Neither party liable for failures due to events beyond their control (war, pandemic, natural disasters, etc.). If force majeure lasts 15+ days, either party can terminate with a pro-rata refund.",
     aggressiveIndicators: [],
-    normalRange: { description: "Standard force majeure with notification requirement and mitigation duty." },
+    normalRange: { description: "Standard force majeure with defined events, mitigation duty, and termination right for prolonged events. Refund of prepaid fees for terminated period is fair." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.9",
+    role: "anchor",
   },
   {
     id: "saas-assignment-001",
@@ -287,23 +362,29 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Assignment",
     clauseName: "Assignment",
     standardText:
-      "Neither Party may assign this Agreement or any of its rights or obligations hereunder without the prior written consent of the other Party, which consent shall not be unreasonably withheld. Notwithstanding the foregoing, either Party may assign this Agreement without consent in connection with a merger, acquisition, or sale of all or substantially all of its assets, provided that the assignee agrees in writing to be bound by the terms of this Agreement.",
+      "Neither party may assign this Agreement without the prior consent of the other party, except that either party may assign this Agreement, with notice to the other party, in connection with the assigning party's merger, reorganization, acquisition or other transfer of all or substantially all of its assets or voting securities. Any non-permitted assignment is void. This Agreement will bind and inure to the benefit of each party's permitted successors and assigns.",
     summary:
-      "Assignment requires consent, except for mergers/acquisitions where the buyer assumes the contract.",
-    aggressiveIndicators: ["freely assign", "without consent", "sole discretion to assign"],
-    normalRange: { description: "Mutual consent with carve-out for M&A is standard." },
+      "Assignment requires consent, except for mergers, acquisitions, or asset transfers. Unauthorized assignments are void.",
+    aggressiveIndicators: ["freely assign", "without consent", "sole discretion to assign", "assign to any affiliate"],
+    normalRange: { description: "Mutual consent with carve-out for M&A is standard. Unilateral assignment rights (especially by the provider) are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.1",
+    role: "anchor",
   },
   {
     id: "saas-governing-law-001",
     contractType: "saas",
     category: "Governing Law",
-    clauseName: "Governing Law",
+    clauseName: "Governing Law and Courts",
     standardText:
-      "This Agreement shall be governed by and construed in accordance with the laws of the State of [State], without regard to its conflict of laws provisions. Any legal action or proceeding arising under this Agreement shall be brought exclusively in the federal or state courts located in [County], [State], and the Parties hereby consent to the personal jurisdiction and venue therein.",
+      "The designated governing law governs this Agreement and any action arising out of or relating to this Agreement, without reference to conflict of law rules. The parties will adjudicate any such action in the designated courts and each party consents to the exclusive jurisdiction and venue of such courts for these purposes.",
     summary:
-      "Specifies governing law and exclusive court jurisdiction.",
+      "Specifies governing law and exclusive court jurisdiction for disputes. Conflict of law rules excluded.",
     aggressiveIndicators: [],
-    normalRange: { description: "Should specify a reasonable jurisdiction agreeable to both parties." },
+    normalRange: { description: "Should specify a reasonable jurisdiction agreeable to both parties. Watch for distant or inconvenient venues that heavily favor one party." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.2",
+    role: "anchor",
   },
   {
     id: "saas-amendment-001",
@@ -311,135 +392,63 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
     category: "Amendment",
     clauseName: "Amendments",
     standardText:
-      "This Agreement may only be amended or modified by a written instrument executed by authorized representatives of both Parties. No terms or conditions contained in any purchase order, acknowledgment, or other business form shall modify or supplement the terms of this Agreement, even if such document is accepted by the other Party.",
+      "Any amendments to this Agreement must be in writing and signed by each party's authorized representatives. This Agreement is the parties' entire agreement regarding its subject matter and supersedes any prior or contemporaneous agreements regarding its subject matter. Terms in business forms, purchase orders or quotes used by either party will not amend or modify this Agreement; any such documents are for administrative purposes only. Waivers must be signed by the waiving party's authorized representative and cannot be implied from conduct.",
     summary:
-      "Changes require written agreement signed by both parties. Purchase orders don't override the agreement.",
-    aggressiveIndicators: ["unilaterally modify", "sole discretion", "change at any time", "by posting on website"],
-    normalRange: { description: "Mutual written consent is the standard for amendments." },
+      "Changes require written agreement signed by both parties. Purchase orders and business forms cannot modify the agreement. Waivers must be explicit and in writing.",
+    aggressiveIndicators: ["unilaterally modify", "sole discretion", "change at any time", "by posting on website", "deemed accepted"],
+    normalRange: { description: "Mutual written consent is the standard for amendments. Unilateral modification rights (especially 'by posting on website') are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.4, §22.6, §22.8",
+    role: "anchor",
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // EMPLOYMENT AGREEMENT CLAUSES
+  // NEW SAAS CATEGORIES
   // ═══════════════════════════════════════════════════════════════════════════
   {
-    id: "emp-at-will-001",
-    contractType: "employment",
-    category: "Employment Status",
-    clauseName: "At-Will Employment",
+    id: "saas-suspension-001",
+    contractType: "saas",
+    category: "Suspension",
+    clauseName: "Suspension of Service",
     standardText:
-      "Employee's employment with the Company is \"at-will,\" meaning that either the Employee or the Company may terminate the employment relationship at any time, with or without cause, and with or without notice. Nothing in this Agreement shall be construed to create an express or implied contract of employment for a definite period of time.",
+      "Provider may suspend Customer's access to the Cloud Service and related services due to a Suspension Event, but where practicable will give Customer prior notice so that Customer may seek to resolve the issue and avoid suspension. Provider is not required to give prior notice in exigent circumstances or for a suspension made to avoid material harm or violation of law. Once the Suspension Event is resolved, Provider will promptly restore Customer's access to the Cloud Service in accordance with this Agreement. \"Suspension Event\" means (a) Customer's account is 30 days or more overdue, (b) Customer is in breach of Usage Rules or (c) Customer's use of the Cloud Service risks material harm to the Cloud Service or others.",
     summary:
-      "Either party can end employment at any time. No guaranteed employment period.",
-    aggressiveIndicators: [],
-    normalRange: { description: "At-will is standard in the US. Fixed-term contracts should specify clear terms." },
+      "Provider can suspend access for overdue payment (30+ days), usage violations, or risk of harm. Must give prior notice when practicable and promptly restore access once resolved.",
+    aggressiveIndicators: ["suspend at any time", "sole discretion to suspend", "without notice", "no obligation to restore", "suspend for any reason"],
+    normalRange: { description: "Suspension for defined events (overdue payment, usage violations, harm) with notice is standard. Broad 'suspend at any time for any reason' clauses are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §13",
+    role: "anchor",
   },
   {
-    id: "emp-compensation-001",
-    contractType: "employment",
-    category: "Compensation",
-    clauseName: "Compensation and Benefits",
+    id: "saas-data-export-001",
+    contractType: "saas",
+    category: "Data Export",
+    clauseName: "Data Export and Deletion",
     standardText:
-      "The Company shall pay Employee a base salary of $[Amount] per year, payable in accordance with the Company's standard payroll schedule, subject to applicable withholdings and deductions. Employee shall be eligible to participate in the Company's standard employee benefit programs, including health insurance, retirement plans, and paid time off, subject to the terms and conditions of such programs as in effect from time to time.",
+      "During a Subscription Term, Customer may export Customer Data from the Cloud Service as described in the Documentation. After termination or expiration of this Agreement, within 60 days of request, Provider will delete Customer Data and each party will delete any Confidential Information of the other in its possession or control. Nonetheless, the recipient may retain Customer Data or Confidential Information in accordance with its standard backup or record retention policies or as required by law, subject to the Security and Confidentiality provisions of this Agreement.",
     summary:
-      "Specifies base salary and eligibility for standard benefits (health, retirement, PTO).",
-    aggressiveIndicators: ["no benefits", "sole discretion to modify compensation", "compensation may be reduced"],
-    normalRange: { description: "Should clearly state salary amount, payment schedule, and benefit eligibility." },
+      "Customer can export their data during the subscription. After termination, provider deletes customer data within 60 days of request. Retention allowed for legal compliance and standard backups.",
+    aggressiveIndicators: ["no export", "no data portability", "data deleted immediately", "no transition period", "provider retains all data"],
+    normalRange: { description: "Data export during term and deletion within 30-90 days post-termination is standard. Retention exceptions for legal compliance and backups are normal." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §14.4",
+    role: "anchor",
   },
   {
-    id: "emp-noncompete-001",
-    contractType: "employment",
-    category: "Non-Compete",
-    clauseName: "Non-Competition",
+    id: "saas-usage-restrictions-001",
+    contractType: "saas",
+    category: "Usage Restrictions",
+    clauseName: "Usage Restrictions",
     standardText:
-      "During Employee's employment and for a period of twelve (12) months following the termination of employment for any reason (the \"Restricted Period\"), Employee shall not, directly or indirectly, engage in, own, manage, operate, or be employed by any business that is in direct competition with the Company's business as conducted at the time of termination, within a fifty (50) mile radius of any Company office where Employee was primarily assigned (the \"Restricted Area\"). This restriction shall not prevent Employee from owning up to 5% of the outstanding shares of a publicly traded company.",
+      "Customer will not and will not permit anyone else to: (a) sell, sublicense, distribute or rent the Cloud Service (in whole or part), grant non-Users access to the Cloud Service or use the Cloud Service to provide a hosted or managed service to others, (b) reverse engineer, decompile or seek to access the source code of the Cloud Service, except to the extent these restrictions are prohibited by applicable laws and then only upon advance notice to Provider, (c) copy, modify, create derivative works of or remove proprietary notices from the Cloud Service, (d) conduct security or vulnerability tests of the Cloud Service, interfere with its operation or circumvent its access restrictions or (e) use the Cloud Service to develop a product that competes with the Cloud Service. Customer represents and warrants that it has all rights necessary to use Customer Data with the Cloud Service without violating third-party intellectual property, privacy or other rights.",
     summary:
-      "12-month non-compete within 50 miles of assigned office. Does not block passive stock ownership under 5%.",
-    aggressiveIndicators: ["worldwide", "globally", "any competitor", "any business", "3 years", "5 years", "24 months", "36 months"],
-    normalRange: { description: "6-12 months, limited geographic scope, limited to direct competitors. Longer than 2 years or worldwide scope is aggressive." },
-  },
-  {
-    id: "emp-nonsolicitation-001",
-    contractType: "employment",
-    category: "Non-Solicitation",
-    clauseName: "Non-Solicitation",
-    standardText:
-      "During Employee's employment and for a period of twelve (12) months following the termination of employment, Employee shall not directly or indirectly: (a) solicit, recruit, or hire any employee of the Company, or encourage any employee to leave the Company; or (b) solicit or attempt to solicit business from any customer, client, or prospective client of the Company with whom Employee had material contact during the last twelve (12) months of employment.",
-    summary:
-      "12-month restriction on recruiting company employees or soliciting company clients after leaving.",
-    aggressiveIndicators: ["all customers", "any person", "24 months", "36 months", "worldwide"],
-    normalRange: { description: "12 months, limited to employees/clients with direct contact. Broader restrictions are unusual." },
-  },
-  {
-    id: "emp-ip-assignment-001",
-    contractType: "employment",
-    category: "IP Assignment",
-    clauseName: "Intellectual Property Assignment",
-    standardText:
-      'Employee agrees to assign and hereby assigns to the Company all right, title, and interest in and to any inventions, works of authorship, designs, discoveries, and improvements (collectively, "Work Product") that are: (a) created or conceived by Employee during the period of employment; (b) related to the Company\'s current or anticipated business or research; and (c) created using the Company\'s resources, time, or facilities. This assignment does not apply to any inventions that Employee develops entirely on their own time without using Company equipment or resources, and that are not related to the Company\'s business.',
-    summary:
-      "Company owns IP created during employment that's related to company business. Personal projects on own time are excluded.",
-    aggressiveIndicators: ["all inventions", "all intellectual property", "pre-existing", "prior inventions", "regardless of when created"],
-    normalRange: { description: "Assignment limited to work-related IP created during employment. Must exclude personal projects and pre-existing IP." },
-  },
-  {
-    id: "emp-confidentiality-001",
-    contractType: "employment",
-    category: "Confidentiality",
-    clauseName: "Confidentiality",
-    standardText:
-      "Employee agrees to hold in strict confidence all Confidential Information of the Company during and after employment. Employee shall not use or disclose any Confidential Information except as necessary in the performance of Employee's duties. Upon termination of employment, Employee shall return all Company property and Confidential Information. This confidentiality obligation shall survive the termination of employment for a period of three (3) years, except with respect to trade secrets, which shall be protected for as long as they remain trade secrets under applicable law.",
-    summary:
-      "Employee must keep company information confidential during and for 3 years after employment. Trade secrets protected indefinitely.",
-    aggressiveIndicators: ["perpetual for all information", "indefinite", "any information learned"],
-    normalRange: { description: "2-5 year confidentiality period, with trade secrets protected indefinitely. Perpetual obligations for all info are unusual." },
-  },
-  {
-    id: "emp-termination-001",
-    contractType: "employment",
-    category: "Termination",
-    clauseName: "Termination and Severance",
-    standardText:
-      "Either Party may terminate this Agreement at any time. If the Company terminates Employee's employment without Cause, the Company shall provide Employee with: (a) continued payment of base salary for a period of three (3) months following the termination date (the \"Severance Period\"); (b) continuation of health insurance benefits during the Severance Period at the Company's expense; and (c) payment of any earned but unpaid bonuses. Employee must execute a general release of claims as a condition of receiving severance benefits.",
-    summary:
-      "3 months severance pay plus health benefits for termination without cause. Requires signing a release.",
-    aggressiveIndicators: ["no severance", "no notice required", "immediate termination", "forfeiture of all benefits"],
-    normalRange: { description: "2-6 months severance for without-cause termination. Release requirement is standard." },
-  },
-  {
-    id: "emp-governing-law-001",
-    contractType: "employment",
-    category: "Governing Law",
-    clauseName: "Governing Law",
-    standardText:
-      "This Agreement shall be governed by and construed in accordance with the laws of the State of [State], without regard to its conflict of laws principles. Any dispute arising out of or relating to this Agreement shall be resolved through binding arbitration in [City], [State], in accordance with the rules of the American Arbitration Association, except that either Party may seek injunctive or equitable relief in any court of competent jurisdiction.",
-    summary:
-      "Disputes resolved through arbitration, with option for court injunctions.",
-    aggressiveIndicators: [],
-    normalRange: { description: "Arbitration with carve-out for injunctive relief is common in employment agreements." },
-  },
-  {
-    id: "emp-entire-agreement-001",
-    contractType: "employment",
-    category: "General",
-    clauseName: "Entire Agreement",
-    standardText:
-      "This Agreement, together with any exhibits and schedules attached hereto, constitutes the entire agreement between the Parties with respect to the subject matter hereof and supersedes all prior and contemporaneous agreements, understandings, negotiations, and discussions, whether oral or written. This Agreement may not be amended except by a written instrument signed by both Parties.",
-    summary:
-      "This is the complete agreement, replacing any prior discussions or agreements. Changes require written mutual consent.",
-    aggressiveIndicators: ["company may modify", "subject to change", "sole discretion"],
-    normalRange: { description: "Standard entire agreement clause with mutual written amendment requirement." },
-  },
-  {
-    id: "emp-dispute-resolution-001",
-    contractType: "employment",
-    category: "Dispute Resolution",
-    clauseName: "Dispute Resolution",
-    standardText:
-      "Any dispute, claim, or controversy arising out of or relating to this Agreement shall first be submitted to good faith mediation. If mediation is unsuccessful within thirty (30) days, the dispute shall be resolved by binding arbitration administered by the American Arbitration Association under its Employment Arbitration Rules. The arbitration shall be conducted in [City], [State], before a single arbitrator. Each Party shall bear its own costs and attorneys' fees, except that the Company shall pay all arbitration filing fees and arbitrator compensation.",
-    summary:
-      "Disputes go to mediation first, then binding arbitration. Company pays arbitration costs.",
-    aggressiveIndicators: ["employee pays all costs", "waive right to court", "exclusive venue in"],
-    normalRange: { description: "Mediation-first, then arbitration. Company should bear arbitration costs." },
+      "Standard restrictions: no reselling, no reverse engineering (except where law prohibits restriction), no copying/modifying, no security testing without permission, no competitive use.",
+    aggressiveIndicators: ["no benchmarking", "no public comments", "no comparison", "no criticism"],
+    normalRange: { description: "Restrictions on resale, reverse engineering, and competitive use are standard. Restrictions on benchmarking, public commentary, or criticism are aggressive and potentially anti-competitive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §9",
+    role: "anchor",
   },
 ];
 
@@ -447,10 +456,10 @@ const rawStandards: Omit<StandardClause, "embedding">[] = [
 
 async function generateEmbeddings(): Promise<StandardClause[]> {
   console.log(`Generating embeddings for ${rawStandards.length} standard clauses...`);
+  console.log();
 
   const texts = rawStandards.map((s) => s.standardText);
 
-  // Batch all embeddings in one API call
   const response = await openai.embeddings.create({
     model: "text-embedding-3-small",
     input: texts,
@@ -477,14 +486,21 @@ async function main() {
 
     const outputPath = path.join(__dirname, "../src/data/standards.json");
     fs.writeFileSync(outputPath, JSON.stringify(standards, null, 2));
-    console.log(`Wrote ${standards.length} standard clauses to ${outputPath}`);
+    console.log(`\nWrote ${standards.length} standard clauses to ${outputPath}`);
 
     // Print summary
+    console.log();
     const types = [...new Set(standards.map((s) => s.contractType))];
     for (const type of types) {
       const count = standards.filter((s) => s.contractType === type).length;
-      console.log(`  ${type}: ${count} clauses`);
+      const sources = [...new Set(standards.filter((s) => s.contractType === type).map((s) => s.source))];
+      console.log(`  ${type}: ${count} clauses (sources: ${sources.join(", ")})`);
     }
+
+    console.log();
+    const anchors = standards.filter((s) => s.role === "anchor").length;
+    const variants = standards.filter((s) => s.role === "variant").length;
+    console.log(`  ${anchors} anchors, ${variants} variants`);
   } catch (error) {
     console.error("Failed to generate embeddings:", error);
     process.exit(1);

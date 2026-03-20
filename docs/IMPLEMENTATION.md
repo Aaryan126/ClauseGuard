@@ -231,26 +231,30 @@ We batch all clause texts into a single API call (up to 100 per batch) for effic
 
 ### What It Is
 
-A JSON file containing 35 standard clause templates — representing what a **fair, industry-standard version** of each clause type looks like. Each entry includes the clause text, metadata, and a pre-computed 1,536-dimension embedding vector.
+A JSON file containing 28 standard clause templates sourced from **authoritative, lawyer-drafted, open-source contract standards**. Each entry includes the clause text, metadata, provenance information, and a pre-computed 1,536-dimension embedding vector.
 
 ### Where the Templates Come From
 
-The templates were authored based on established contract law patterns and informed by widely-used public templates:
-- **YC's SAFE and standard NDA** — widely accepted startup contract templates
-- **Bonterms Cloud Terms** — open-source SaaS agreement used by many tech companies
-- **SHRM guidelines** — standard employment agreement practices
-- **SEC EDGAR filings** — real NDAs from publicly traded companies
-- **General contract law principles** — established legal drafting conventions
+Templates are sourced verbatim (with minimal adaptation for variable references) from established, community-validated legal standards:
 
-**Important:** These templates have not been reviewed by a licensed attorney. They represent reasonable approximations of industry norms for the purpose of deviation detection.
+- **Common Paper Mutual NDA v1.0** (CC BY 4.0) — NDA clauses. Drafted by a committee of 40+ attorneys. YC-backed. Used by 2,000+ companies. [GitHub](https://github.com/CommonPaper/Mutual-NDA)
+- **Bonterms Cloud Terms v1.0** (CC BY 4.0) — SaaS agreement clauses. Developed by a committee of 120+ lawyers over 7 months. [GitHub](https://github.com/Bonterms/Cloud-Terms)
+- **Manual** — 1 clause (Non-Solicitation for NDA) where no authoritative open-source template exists, modeled on established legal practice.
+
+### Multi-Anchor Architecture
+
+Each standard clause entry has a `role` field:
+- **anchor** — The primary, authoritative template for a clause category. Sourced from Common Paper or Bonterms.
+- **variant** — Additional real-world wording for the same category (future: sourced from CUAD dataset). Expands the "surface area" of what's considered standard, reducing false flags for clauses that are standard but worded differently.
+
+At comparison time, a user's clause is compared against all entries. The highest cosine similarity across all anchors and variants determines the match. This means a clause only needs to be similar to ANY standard version to score well.
 
 ### Coverage
 
-| Contract Type | Clauses | Categories |
-|---------------|---------|------------|
-| **NDA** | 10 | Definition of confidential info, obligations, exclusions, compelled disclosure, term/duration, return of materials, remedies, non-solicitation, governing law, amendment |
-| **SaaS Agreement** | 15 | Term/renewal, termination (convenience + cause), liability cap, indemnification, data protection, SLA/uptime, payment, IP ownership, confidentiality, warranty, force majeure, assignment, governing law, amendments |
-| **Employment** | 10 | At-will status, compensation, non-compete, non-solicitation, IP assignment, confidentiality, termination/severance, governing law, entire agreement, dispute resolution |
+| Contract Type | Clauses | Source | Categories |
+|---------------|---------|--------|------------|
+| **NDA** | 10 | Common Paper (9), Manual (1) | Definition of confidential info, obligations, exclusions, required disclosures, term/termination, return of materials, equitable relief, non-solicitation, governing law, amendment |
+| **SaaS Agreement** | 18 | Bonterms (18) | Term/renewal, termination (convenience + cause), liability cap, indemnification, data protection, SLA/uptime, payment, IP ownership, confidentiality, warranty, force majeure, assignment, governing law, amendments, **suspension**, **data export/deletion**, **usage restrictions** |
 
 ### Schema Per Entry
 
@@ -259,14 +263,17 @@ The templates were authored based on established contract law patterns and infor
   id: "nda-term-001",                    // Unique identifier
   contractType: "nda",                   // Which contract family
   category: "Term",                      // Clause category
-  clauseName: "Term and Duration",       // Human-readable name
-  standardText: "This Agreement...",     // The actual standard clause text
-  summary: "NDA lasts 2 years...",       // 1-2 sentence plain-English summary
+  clauseName: "Term and Termination",    // Human-readable name
+  standardText: "This MNDA...",          // The actual standard clause text
+  summary: "Either party can...",        // 1-2 sentence plain-English summary
   embedding: [0.023, -0.041, ...],       // Pre-computed 1536-dim vector
   aggressiveIndicators: ["perpetual"],   // Keywords signaling aggressive variants
   normalRange: {
     description: "Term of 1-3 years..."  // What's considered acceptable
-  }
+  },
+  source: "common-paper",               // Provenance: common-paper | bonterms | cuad | manual
+  sourceRef: "Common Paper Mutual NDA v1.0 §5",  // Specific section reference
+  role: "anchor"                         // anchor (primary) or variant (additional)
 }
 ```
 
@@ -321,11 +328,12 @@ function cosineSimilarity(a: number[], b: number[]): number {
 ### Matching Process
 
 For each uploaded clause:
-1. Compute cosine similarity against **all 35** standard clauses
-2. Return the standard clause with the highest similarity score
-3. This is the "closest match" — the most similar standard template
+1. Filter standards to the user-selected contract type (NDA or SaaS)
+2. Compute cosine similarity against all standards in that type (10 for NDA, 18 for SaaS)
+3. Return the standard clause with the highest similarity score
+4. This is the "closest match" — the most similar standard template
 
-This is a brute-force linear scan. With only 35 standards, this takes microseconds. For larger databases (1,000+), you'd use an approximate nearest neighbor (ANN) algorithm or a vector database like Pinecone/ChromaDB.
+This is a brute-force linear scan. With only 10-18 standards per type, this takes microseconds. For larger databases (1,000+), you'd use an approximate nearest neighbor (ANN) algorithm or a vector database like Pinecone/ChromaDB.
 
 ### Example Scores
 
@@ -497,28 +505,24 @@ If the LLM call fails for any clause, the explanation falls back to: *"Unable to
 
 ---
 
-## 10. Contract Type Detection
-
-**File:** `src/lib/analyzer.ts` (function `detectContractType`)
+## 10. Contract Type Selection
 
 ### What It Does
 
-Automatically detects what type of contract was uploaded based on keyword frequency.
+The user explicitly selects their contract type (NDA or SaaS Agreement) before uploading. This replaced the previous auto-detection approach.
 
-### How It Works
+### Why User Selection Instead of Auto-Detection
 
-Scans the full document text for keywords associated with each contract type:
+1. **Accuracy** — The user knows what they're signing; keyword detection can misclassify.
+2. **Better comparisons** — Standards are filtered by the selected type, so clauses are only compared against relevant templates (10 NDA standards or 18 SaaS standards).
+3. **Simpler UX** — The user understands upfront what they're getting analyzed against.
 
-| Contract Type | Detection Keywords |
-|---------------|-------------------|
-| NDA | "non-disclosure", "nda", "confidential information", "receiving party", "disclosing party" |
-| SaaS Agreement | "software as a service", "saas", "subscription", "service level", "uptime", "sla" |
-| Employment Agreement | "employee", "employer", "employment", "compensation", "benefits", "at-will" |
-| Freelance/Contractor | "contractor", "independent contractor", "statement of work", "deliverables" |
+### Supported Types
 
-The type with the most keyword matches wins. If nothing matches well enough, it defaults to "General Contract."
-
-This is used for display purposes in the report header — it does not affect scoring or comparison (all 35 standard clauses from all types are compared regardless).
+| Contract Type | Standards | Source |
+|---------------|-----------|--------|
+| **Non-Disclosure Agreement (NDA)** | 10 clauses | Common Paper Mutual NDA v1.0 (9), Manual (1) |
+| **SaaS Agreement** | 18 clauses | Bonterms Cloud Terms v1.0 (18) |
 
 ---
 
@@ -529,7 +533,7 @@ This is used for display purposes in the report header — it does not affect sc
 ### Step-by-Step Execution
 
 ```
-analyzeContract(buffer, filename)
+analyzeContract(buffer, filename, contractType)
 │
 ├── Step 1: parseDocument(buffer, filename)
 │   └── Returns: raw text string
@@ -537,14 +541,14 @@ analyzeContract(buffer, filename)
 ├── Step 2: segmentClauses(text)
 │   └── Returns: ExtractedClause[] (array of {title, text, index, startChar, endChar})
 │
-├── Step 3: loadStandards()
-│   └── Returns: StandardClause[] (35 entries from standards.json, cached after first load)
+├── Step 3: loadStandards() → filter by contractType
+│   └── Returns: StandardClause[] (10 for NDA, 18 for SaaS, cached after first load)
 │
 ├── Step 4: getEmbeddings(clauseTexts)
 │   └── Returns: number[][] (one 1536-dim vector per clause, via OpenAI API)
 │
 ├── Step 5: For each clause:
-│   ├── findBestMatch(embedding, standards) → closest standard + similarity score
+│   ├── findBestMatch(embedding, filteredStandards) → closest standard + similarity score
 │   ├── checkAggressivePatterns(clause.text) → array of rule hits
 │   ├── getSeverityFromSimilarity(similarity) → green/yellow/red
 │   └── combineSeverity(embeddingSeverity, ruleHits) → final severity
@@ -555,7 +559,7 @@ analyzeContract(buffer, filename)
 └── Step 7: Build report
     ├── Count green/yellow/red
     ├── Calculate overall risk score
-    ├── Detect contract type
+    ├── Use user-selected contract type label
     └── Return AnalysisReport JSON
 ```
 
@@ -584,18 +588,19 @@ analyzeContract(buffer, filename)
 
 ### View States
 
-The app has a single page (`src/app/page.tsx`) with 4 view states:
+The app has a single page (`src/app/page.tsx`) with 5 view states:
 
 ```
-upload → analyzing → report
-                  ↘ error
+select-type → upload → analyzing → report
+                                ↘ error
 ```
 
 | State | What's Shown |
 |-------|-------------|
-| `upload` | Hero section ("Is This Clause Normal?"), drag-and-drop zone, 3-step how-it-works |
+| `select-type` | Hero section ("Is This Clause Normal?"), contract type selection cards (NDA, SaaS Agreement), 3-step how-it-works |
+| `upload` | Selected type badge, drag-and-drop zone, "Change Type" back button |
 | `analyzing` | Spinning loader, animated step list (parsing, embedding, comparing, explaining) |
-| `report` | Summary dashboard (risk score, green/yellow/red counts), clause-by-clause cards |
+| `report` | Summary bar (risk score, green/yellow/red counts), split-pane document viewer + detail panel |
 | `error` | Error message with "Try Again" button |
 
 ### Key Components
@@ -623,7 +628,7 @@ upload → analyzing → report
 
 **Request:**
 - Content-Type: `multipart/form-data`
-- Body: `file` field containing the uploaded document
+- Body: `file` field containing the uploaded document, `contractType` field (`"nda"` or `"saas"`)
 
 **Response (success):**
 ```json
@@ -677,22 +682,22 @@ upload → analyzing → report
 | `src/lib/rules.ts` | ~260 | 15 aggressive pattern detection rules (7 RED, 8 YELLOW). Regex + keyword matching. |
 | `src/lib/scoring.ts` | ~50 | Traffic-light thresholds, severity combination logic, overall risk score calculation. |
 | `src/lib/explainer.ts` | ~70 | Gemini 2.0 Flash integration. Generates plain-English explanations for flagged clauses. |
-| `src/lib/analyzer.ts` | ~95 | Orchestrator. Ties the entire pipeline together: parse → segment → embed → compare → score → explain → report. |
+| `src/lib/analyzer.ts` | ~70 | Orchestrator. Accepts contract type, filters standards, ties pipeline together: parse, segment, embed, compare, score, explain, report. |
 
 ### Data Layer
 
 | File | Purpose |
 |------|---------|
-| `src/data/standards.json` | 35 standard clause templates with pre-computed embeddings (~2MB). |
+| `src/data/standards.json` | 28 standard clause templates with pre-computed embeddings. Sourced from Common Paper (NDA) and Bonterms (SaaS). |
 | `src/data/standards-loader.ts` | Loads and caches standards.json in memory. |
-| `src/types/index.ts` | All TypeScript type definitions (StandardClause, ExtractedClause, ClauseAnalysis, AnalysisReport, etc.). |
-| `scripts/seed-standards.ts` | One-time script. Defines all standard clause templates, calls OpenAI to compute embeddings, writes standards.json. |
+| `src/types/index.ts` | All TypeScript type definitions (ContractType, StandardClause, ExtractedClause, ClauseAnalysis, AnalysisReport, etc.). |
+| `scripts/seed-standards.ts` | Seed script. Defines all standard clause templates with source provenance, calls OpenAI to compute embeddings, writes standards.json. |
 
 ### Frontend
 
 | File | Purpose |
 |------|---------|
-| `src/app/page.tsx` | Main page. Manages upload → analyzing → report view states. |
+| `src/app/page.tsx` | Main page. Manages select-type, upload, analyzing, report, error view states. |
 | `src/app/layout.tsx` | Root layout with fonts and metadata. |
 | `src/app/api/analyze/route.ts` | API endpoint. Accepts file upload, calls analyzer, returns JSON report. |
 | `src/components/upload-zone.tsx` | Drag-and-drop file upload with file type/size validation. |
@@ -730,21 +735,23 @@ upload → analyzing → report
 
 ### Current Limitations
 
-1. **Standard clause database is AI-generated** — Not reviewed by a licensed attorney. Suitable for a prototype, not legal advice.
+1. **Not legal advice** — Standard clause templates are sourced from authoritative open-source agreements (Common Paper, Bonterms) but have not been independently reviewed by a licensed attorney for this specific application.
 2. **No OCR** — Image-only PDFs (scanned documents) will fail. Only text-layer PDFs are supported.
 3. **English only** — All templates and rules are in English.
 4. **No jurisdiction awareness** — The same standards are applied regardless of legal jurisdiction. A non-compete that's standard in Delaware may be unenforceable in California.
-5. **3 contract types** — Only NDA, SaaS, and Employment agreements have standard templates. Other contract types will still be analyzed but with less accurate matching.
+5. **2 contract types** — Only NDA and SaaS agreements have standard templates. Employment agreements are planned (sourced from CUAD dataset).
 6. **Segmentation assumes well-formatted contracts** — Contracts without clear section headers may segment poorly.
+7. **Single anchor per category** — Each clause category currently has one reference point. Adding variant entries from CUAD would expand matching coverage.
 
 ### Future Improvements
 
-- Lawyer-reviewed standard clause database
+- Employment agreement support (sourced from CUAD real-world clauses)
 - More contract types (rental/lease, freelance, partnership, terms of service)
+- CUAD dataset variants for multi-anchor matching per category
+- Common Paper CSA variants for SaaS categories (dual-source coverage)
 - Jurisdiction-specific analysis (e.g., California non-compete rules)
 - OCR support for scanned PDFs
 - Side-by-side diff view (uploaded clause vs. standard)
 - Exportable PDF report
 - Multi-language support
 - User-customizable thresholds and rules
-- Clause-level recommendations (not just flags)

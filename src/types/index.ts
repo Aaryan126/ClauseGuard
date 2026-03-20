@@ -1,6 +1,8 @@
+export type ContractType = "nda" | "saas";
+
 export interface StandardClause {
   id: string;
-  contractType: "nda" | "saas" | "employment";
+  contractType: ContractType;
   category: string;
   clauseName: string;
   standardText: string;
@@ -10,6 +12,9 @@ export interface StandardClause {
   normalRange: {
     description: string;
   };
+  source: "common-paper" | "bonterms" | "cuad" | "manual";
+  sourceRef: string;
+  role: "anchor" | "variant";
 }
 
 export interface ExtractedClause {

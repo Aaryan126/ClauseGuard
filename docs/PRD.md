@@ -41,18 +41,19 @@ This means the traffic-light scores are **reproducible and defensible** — the 
 
 ## How It Works (User Flow)
 
-1. **Upload** — User drops a PDF, DOCX, or TXT contract file
-2. **Parse** — System extracts text from the document
-3. **Segment** — Contract is split into individual clauses using structural analysis (section headers, numbered paragraphs)
-4. **Embed** — Each clause is converted to a semantic vector using OpenAI's text-embedding-3-small
-5. **Compare** — Each clause vector is compared against pre-computed vectors of ~60-75 standard clause templates via cosine similarity
-6. **Rule Check** — 15 aggressive pattern rules (regex + keyword) check for specific dangers like "non-compete > 2 years" or "unlimited liability"
-7. **Score** — Each clause gets a traffic-light rating:
+1. **Select Type** — User selects their contract type (NDA or SaaS Agreement)
+2. **Upload** — User drops a PDF, DOCX, or TXT contract file
+3. **Parse** — System extracts text from the document
+4. **Segment** — Contract is split into individual clauses using structural analysis (section headers, numbered paragraphs)
+5. **Embed** — Each clause is converted to a semantic vector using OpenAI's text-embedding-3-small
+6. **Compare** — Each clause vector is compared against pre-computed vectors of 28 lawyer-drafted standard clause templates (filtered by selected type) via cosine similarity
+7. **Rule Check** — 15 aggressive pattern rules (regex + keyword) check for specific dangers like "non-compete > 2 years" or "unlimited liability"
+8. **Score** — Each clause gets a traffic-light rating:
    - **Green (≥ 82% match)** — Standard clause, consistent with industry norms
    - **Yellow (65-81% match)** — Unusual deviation, worth reviewing carefully
    - **Red (< 65% match)** — Significantly different from any standard, or matches an aggressive pattern
-8. **Explain** — For yellow and red clauses, Gemini 2.0 Flash generates a plain-English explanation of the risk and what "normal" looks like
-9. **Report** — User sees a summary dashboard + clause-by-clause breakdown
+9. **Explain** — For yellow and red clauses, Gemini 2.0 Flash generates a plain-English explanation of the risk and what "normal" looks like
+10. **Report** — User sees a summary dashboard + clause-by-clause breakdown
 
 ---
 
@@ -110,26 +111,35 @@ This means the traffic-light scores are **reproducible and defensible** — the 
 
 ## Standard Clause Database
 
-The heart of the system. A curated JSON file containing industry-standard clause templates with pre-computed embedding vectors.
+The heart of the system. 28 lawyer-drafted standard clause templates sourced from authoritative open-source contract standards, with pre-computed embedding vectors.
+
+### Sources
+- **Common Paper Mutual NDA v1.0** (CC BY 4.0) — 40+ attorney committee, YC-backed
+- **Bonterms Cloud Terms v1.0** (CC BY 4.0) — 120+ lawyer committee
 
 ### Contract Types Supported
-1. **Non-Disclosure Agreement (NDA)** — Simple, well-understood, great for demos
-2. **SaaS / Software Service Agreement** — Most common in tech
-3. **Employment Agreement** — Relatable, has clear aggressive patterns
+1. **Non-Disclosure Agreement (NDA)** — 10 clauses from Common Paper
+2. **SaaS / Software Service Agreement** — 18 clauses from Bonterms
 
-### Per Contract Type (~20-25 clauses each)
-Categories covered: definitions, term/renewal, termination, liability, indemnification, data protection, IP ownership, confidentiality, warranties, force majeure, governing law, assignment, amendment, payment terms, non-compete, non-solicitation, dispute resolution, SLA/uptime, and more.
+### NDA Categories (10)
+Definitions, obligations, exclusions, required disclosures, term/termination, return of materials, equitable relief, non-solicitation, governing law, amendment
+
+### SaaS Categories (18)
+Term/renewal, termination (convenience + cause), liability, indemnification, data protection, SLA/uptime, payment, IP ownership, confidentiality, warranty, force majeure, assignment, governing law, amendments, suspension, data export/deletion, usage restrictions
 
 ### Each Standard Clause Entry Contains:
-- `id` — Unique identifier (e.g., "nda-confidentiality-001")
+- `id` — Unique identifier (e.g., "nda-definition-001")
 - `contractType` — Which contract type it belongs to
 - `category` — Clause category (e.g., "termination", "liability")
 - `clauseName` — Human-readable name
-- `standardText` — The actual standard clause text
+- `standardText` — The actual standard clause text (verbatim from source)
 - `summary` — 1-2 sentence plain-English summary
 - `embedding` — Pre-computed 1536-dimension vector
 - `aggressiveIndicators` — Keywords that signal aggressive variants
 - `normalRange` — Description of what's considered acceptable
+- `source` — Provenance (common-paper, bonterms, cuad, manual)
+- `sourceRef` — Specific section reference (e.g., "Common Paper Mutual NDA v1.0 §2")
+- `role` — anchor (primary template) or variant (additional real-world wording)
 
 ---
 

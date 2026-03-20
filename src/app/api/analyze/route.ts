@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeContract } from "@/lib/analyzer";
+import { ContractType } from "@/types";
+
+const VALID_CONTRACT_TYPES: ContractType[] = ["nda", "saas"];
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const contractType = formData.get("contractType") as string | null;
 
     if (!file) {
       return NextResponse.json(
         { error: "No file provided. Please upload a PDF, DOCX, or TXT file." },
+        { status: 400 }
+      );
+    }
+
+    if (!contractType || !VALID_CONTRACT_TYPES.includes(contractType as ContractType)) {
+      return NextResponse.json(
+        { error: "Please select a contract type (NDA or SaaS Agreement)." },
         { status: 400 }
       );
     }
@@ -24,7 +35,7 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const report = await analyzeContract(buffer, file.name);
+    const report = await analyzeContract(buffer, file.name, contractType as ContractType);
 
     return NextResponse.json(report);
   } catch (error) {

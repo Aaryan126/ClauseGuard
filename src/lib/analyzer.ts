@@ -6,11 +6,17 @@ import { getSeverityFromSimilarity, combineSeverity, calculateOverallRiskScore, 
 import { checkAggressivePatterns } from "./rules";
 import { explainFlaggedClauses } from "./explainer";
 import { loadStandards } from "@/data/standards-loader";
-import { AnalysisReport, ClauseAnalysis, Severity } from "@/types";
+import { AnalysisReport, ClauseAnalysis, ContractType, Severity } from "@/types";
+
+const CONTRACT_TYPE_LABELS: Record<ContractType, string> = {
+  nda: "Non-Disclosure Agreement (NDA)",
+  saas: "SaaS Agreement",
+};
 
 export async function analyzeContract(
   buffer: Buffer,
-  filename: string
+  filename: string,
+  contractType: ContractType
 ): Promise<AnalysisReport> {
   // Step 1: Parse the document
   const text = await parseDocument(buffer, filename);
@@ -22,8 +28,9 @@ export async function analyzeContract(
     throw new Error("No clauses could be extracted from the document.");
   }
 
-  // Step 3: Load standard clauses
-  const standards = await loadStandards();
+  // Step 3: Load standard clauses filtered by contract type
+  const allStandards = await loadStandards();
+  const standards = allStandards.filter((s) => s.contractType === contractType);
 
   // Step 4: Generate embeddings for all extracted clauses
   const clauseTexts = clauses.map((c) => c.text);
@@ -63,34 +70,10 @@ export async function analyzeContract(
   };
 
   return {
-    contractType: detectContractType(text),
+    contractType: CONTRACT_TYPE_LABELS[contractType],
     totalClauses: clauses.length,
     summary,
     overallRiskScore: calculateOverallRiskScore(severities),
     clauses: analyses,
   };
-}
-
-function detectContractType(text: string): string {
-  const lower = text.toLowerCase();
-
-  const signals: Record<string, string[]> = {
-    "Non-Disclosure Agreement (NDA)": ["non-disclosure", "nda", "confidential information", "receiving party", "disclosing party"],
-    "SaaS Agreement": ["software as a service", "saas", "subscription", "service level", "uptime", "sla"],
-    "Employment Agreement": ["employee", "employer", "employment", "compensation", "benefits", "at-will"],
-    "Freelance / Contractor Agreement": ["contractor", "independent contractor", "statement of work", "deliverables"],
-  };
-
-  let bestType = "General Contract";
-  let bestScore = 0;
-
-  for (const [type, keywords] of Object.entries(signals)) {
-    const score = keywords.filter((kw) => lower.includes(kw)).length;
-    if (score > bestScore) {
-      bestScore = score;
-      bestType = type;
-    }
-  }
-
-  return bestType;
 }

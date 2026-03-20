@@ -1,25 +1,40 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Shield, ArrowLeft } from "lucide-react";
+import { Shield, ArrowLeft, FileText, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload-zone";
 import { AnalysisProgress } from "@/components/analysis-progress";
 import { SummaryBar } from "@/components/summary-bar";
 import { DocumentViewer } from "@/components/document-viewer";
 import { DetailPanel } from "@/components/detail-panel";
-import { AnalysisReport } from "@/types";
+import { AnalysisReport, ContractType } from "@/types";
 
-type ViewState = "upload" | "analyzing" | "report" | "error";
+type ViewState = "select-type" | "upload" | "analyzing" | "report" | "error";
+
+const CONTRACT_OPTIONS: { type: ContractType; label: string; description: string; icon: typeof FileText }[] = [
+  {
+    type: "nda",
+    label: "Non-Disclosure Agreement",
+    description: "Confidentiality agreements, mutual NDAs, unilateral NDAs",
+    icon: FileText,
+  },
+  {
+    type: "saas",
+    label: "SaaS Agreement",
+    description: "Software subscriptions, cloud service terms, service agreements",
+    icon: Cloud,
+  },
+];
 
 export default function Home() {
-  const [view, setView] = useState<ViewState>("upload");
+  const [view, setView] = useState<ViewState>("select-type");
+  const [contractType, setContractType] = useState<ContractType | null>(null);
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [selectedClause, setSelectedClause] = useState<number | null>(null);
 
-  // Auto-select the first red clause, or first yellow, or first clause
   useEffect(() => {
     if (view === "report" && report) {
       const firstRed = report.clauses.findIndex((c) => c.severity === "red");
@@ -36,7 +51,14 @@ export default function Home() {
     }
   }, [view, report]);
 
+  const handleTypeSelected = (type: ContractType) => {
+    setContractType(type);
+    setView("upload");
+  };
+
   const handleFileSelected = async (file: File) => {
+    if (!contractType) return;
+
     setView("analyzing");
     setFileName(file.name);
     setError(null);
@@ -45,6 +67,7 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("contractType", contractType);
 
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -66,12 +89,15 @@ export default function Home() {
   };
 
   const handleReset = () => {
-    setView("upload");
+    setView("select-type");
+    setContractType(null);
     setReport(null);
     setError(null);
     setFileName("");
     setSelectedClause(null);
   };
+
+  const selectedLabel = CONTRACT_OPTIONS.find((o) => o.type === contractType)?.label;
 
   return (
     <main className="flex flex-col h-screen">
@@ -92,15 +118,22 @@ export default function Home() {
                 </Button>
               </>
             )}
+            {view === "upload" && (
+              <Button variant="outline" size="sm" onClick={() => setView("select-type")}>
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Change Type
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Upload / Analyzing / Error views */}
+      {/* Pre-report views */}
       {view !== "report" && (
         <div className="flex-1 overflow-auto">
           <div className="max-w-5xl mx-auto px-4 py-8">
-            {view === "upload" && (
+            {/* Step 1: Select contract type */}
+            {view === "select-type" && (
               <div className="space-y-8">
                 <div className="text-center space-y-3">
                   <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
@@ -112,12 +145,42 @@ export default function Home() {
                   </p>
                 </div>
 
-                <UploadZone onFileSelected={handleFileSelected} isAnalyzing={false} />
+                <div className="max-w-2xl mx-auto">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3 text-center">
+                    What type of contract are you reviewing?
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {CONTRACT_OPTIONS.map((option) => {
+                      const Icon = option.icon;
+                      return (
+                        <button
+                          key={option.type}
+                          onClick={() => handleTypeSelected(option.type)}
+                          className="group border-2 border-gray-200 dark:border-gray-700 rounded-xl p-6 text-left
+                            hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20
+                            transition-all duration-200 cursor-pointer"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                              <Icon className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
+                                {option.label}
+                              </h3>
+                              <p className="text-sm text-gray-500 mt-1">{option.description}</p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
                   {[
+                    { title: "Select", desc: "Choose your contract type so we compare against the right standards." },
                     { title: "Upload", desc: "Drop your contract in PDF, DOCX, or TXT format." },
-                    { title: "Compare", desc: "Each clause is compared against a database of industry-standard templates using semantic analysis." },
                     { title: "Review", desc: "Get a traffic-light report showing which clauses are standard, unusual, or aggressive." },
                   ].map((step, i) => (
                     <div key={i} className="text-center p-6">
@@ -129,6 +192,24 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Step 2: Upload document */}
+            {view === "upload" && (
+              <div className="space-y-8">
+                <div className="text-center space-y-3">
+                  <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-full text-sm font-medium">
+                    {selectedLabel}
+                  </div>
+                  <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                    Upload Your Contract
+                  </h2>
+                  <p className="text-gray-500 max-w-md mx-auto">
+                    We will compare each clause against lawyer-drafted {selectedLabel} standards.
+                  </p>
+                </div>
+                <UploadZone onFileSelected={handleFileSelected} isAnalyzing={false} />
               </div>
             )}
 
@@ -144,15 +225,11 @@ export default function Home() {
         </div>
       )}
 
-      {/* Report view — Turnitin-style split pane */}
+      {/* Report view */}
       {view === "report" && report && (
         <>
-          {/* Summary bar */}
           <SummaryBar report={report} />
-
-          {/* Split pane */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Left: Document with highlighted clauses */}
             <div className="flex-1 overflow-y-auto border-r bg-white dark:bg-gray-950 p-4">
               <DocumentViewer
                 clauses={report.clauses}
@@ -160,8 +237,6 @@ export default function Home() {
                 onClauseClick={setSelectedClause}
               />
             </div>
-
-            {/* Right: Detail panel */}
             <div className="w-[400px] flex-shrink-0 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4">
               <DetailPanel
                 analysis={selectedClause !== null ? report.clauses[selectedClause] : null}
