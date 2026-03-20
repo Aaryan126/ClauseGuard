@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { Shield } from "lucide-react";
 import { AnalysisReport } from "@/types";
 
 interface SummaryBarProps {
@@ -56,21 +56,21 @@ export function SummaryBar({ report }: SummaryBarProps) {
           </div>
         </div>
 
-        {/* Breakdown chips */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <CheckCircle className="w-4 h-4 text-emerald-500" />
-            <span className="text-sm font-bold text-emerald-600">{summary.green}</span>
+        {/* Breakdown counts */}
+        <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="font-bold text-emerald-600">{summary.green}</span>
             <span className="text-xs text-gray-400">ok</span>
           </div>
-          <div className="flex items-center gap-1">
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span className="text-sm font-bold text-amber-500">{summary.yellow}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+            <span className="font-bold text-amber-500">{summary.yellow}</span>
             <span className="text-xs text-gray-400">review</span>
           </div>
-          <div className="flex items-center gap-1">
-            <XCircle className="w-4 h-4 text-red-500" />
-            <span className="text-sm font-bold text-red-600">{summary.red}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+            <span className="font-bold text-red-600">{summary.red}</span>
             <span className="text-xs text-gray-400">risk</span>
           </div>
         </div>

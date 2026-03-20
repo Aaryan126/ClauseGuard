@@ -75,5 +75,6 @@ export async function analyzeContract(
     summary,
     overallRiskScore: calculateOverallRiskScore(severities),
     clauses: analyses,
+    rawText: text,
   };
 }

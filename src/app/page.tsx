@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Shield, ArrowLeft, FileText, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload-zone";
@@ -33,7 +33,10 @@ export default function Home() {
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<string>("");
   const [selectedClause, setSelectedClause] = useState<number | null>(null);
+  const fileUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (view === "report" && report) {
@@ -63,6 +66,13 @@ export default function Home() {
     setFileName(file.name);
     setError(null);
     setSelectedClause(null);
+
+    // Store original file as blob URL for the PDF viewer
+    if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
+    const url = URL.createObjectURL(file);
+    fileUrlRef.current = url;
+    setFileUrl(url);
+    setFileType(file.name.split(".").pop()?.toLowerCase() || "");
 
     try {
       const formData = new FormData();
@@ -95,6 +105,12 @@ export default function Home() {
     setError(null);
     setFileName("");
     setSelectedClause(null);
+    if (fileUrlRef.current) {
+      URL.revokeObjectURL(fileUrlRef.current);
+      fileUrlRef.current = null;
+    }
+    setFileUrl(null);
+    setFileType("");
   };
 
   const selectedLabel = CONTRACT_OPTIONS.find((o) => o.type === contractType)?.label;
@@ -132,7 +148,6 @@ export default function Home() {
       {view !== "report" && (
         <div className="flex-1 overflow-auto">
           <div className="max-w-5xl mx-auto px-4 py-8">
-            {/* Step 1: Select contract type */}
             {view === "select-type" && (
               <div className="space-y-8">
                 <div className="text-center space-y-3">
@@ -195,7 +210,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Step 2: Upload document */}
             {view === "upload" && (
               <div className="space-y-8">
                 <div className="text-center space-y-3">
@@ -232,6 +246,9 @@ export default function Home() {
           <div className="flex-1 flex overflow-hidden">
             <div className="flex-1 overflow-y-auto border-r bg-white dark:bg-gray-950 p-4">
               <DocumentViewer
+                fileUrl={fileUrl}
+                fileType={fileType}
+                rawText={report.rawText}
                 clauses={report.clauses}
                 selectedIndex={selectedClause}
                 onClauseClick={setSelectedClause}

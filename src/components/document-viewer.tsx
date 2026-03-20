@@ -1,106 +1,134 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useMemo } from "react";
 import { ClauseAnalysis, Severity } from "@/types";
 
+// Dynamically import PdfViewer (needs browser APIs, can't SSR)
+const PdfViewer = dynamic(() => import("./pdf-viewer").then((m) => ({ default: m.PdfViewer })), {
+  ssr: false,
+  loading: () => <div className="text-sm text-gray-400 py-8 text-center">Loading viewer...</div>,
+});
+
 interface DocumentViewerProps {
+  fileUrl: string | null;
+  fileType: string;
+  rawText: string;
   clauses: ClauseAnalysis[];
   selectedIndex: number | null;
   onClauseClick: (index: number) => void;
 }
 
+export function DocumentViewer({ fileUrl, fileType, rawText, clauses, selectedIndex, onClauseClick }: DocumentViewerProps) {
+  if (fileType === "pdf" && fileUrl) {
+    return (
+      <PdfViewer
+        fileUrl={fileUrl}
+        clauses={clauses}
+        selectedIndex={selectedIndex}
+        onClauseClick={onClauseClick}
+      />
+    );
+  }
+
+  // Fallback: text view for DOCX/TXT
+  return (
+    <TextDocumentViewer
+      rawText={rawText}
+      clauses={clauses}
+      selectedIndex={selectedIndex}
+      onClauseClick={onClauseClick}
+    />
+  );
+}
+
+// Text-based viewer (for DOCX/TXT files)
+
 const severityBg: Record<Severity, string> = {
-  green: "bg-emerald-50 hover:bg-emerald-100/80 border-l-emerald-400",
-  yellow: "bg-amber-50 hover:bg-amber-100/80 border-l-amber-400",
-  red: "bg-red-50 hover:bg-red-100/80 border-l-red-400",
+  green: "bg-emerald-100/50",
+  yellow: "bg-amber-100/60",
+  red: "bg-red-100/60",
 };
 
 const severityBgSelected: Record<Severity, string> = {
-  green: "bg-emerald-100 border-l-emerald-600 ring-2 ring-emerald-300",
-  yellow: "bg-amber-100 border-l-amber-600 ring-2 ring-amber-300",
-  red: "bg-red-100 border-l-red-600 ring-2 ring-red-300",
+  green: "bg-emerald-200/70 ring-1 ring-emerald-400/40",
+  yellow: "bg-amber-200/70 ring-1 ring-amber-400/40",
+  red: "bg-red-200/70 ring-1 ring-red-400/40",
 };
 
-const SeverityIcon = ({ severity, className }: { severity: Severity; className?: string }) => {
-  const props = { className: `w-4 h-4 flex-shrink-0 ${className || ""}` };
-  switch (severity) {
-    case "green": return <CheckCircle {...props} />;
-    case "yellow": return <AlertTriangle {...props} />;
-    case "red": return <XCircle {...props} />;
-  }
-};
+interface TextSegment {
+  text: string;
+  clauseIndex: number | null;
+  severity: Severity | null;
+}
 
-const severityIconColor: Record<Severity, string> = {
-  green: "text-emerald-600",
-  yellow: "text-amber-500",
-  red: "text-red-500",
-};
+function TextDocumentViewer({
+  rawText,
+  clauses,
+  selectedIndex,
+  onClauseClick,
+}: {
+  rawText: string;
+  clauses: ClauseAnalysis[];
+  selectedIndex: number | null;
+  onClauseClick: (index: number) => void;
+}) {
+  const segments = useMemo(() => {
+    const result: TextSegment[] = [];
+    let cursor = 0;
 
-export function DocumentViewer({ clauses, selectedIndex, onClauseClick }: DocumentViewerProps) {
-  const clauseRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const sorted = clauses
+      .map((c, i) => ({ analysis: c, originalIndex: i }))
+      .sort((a, b) => a.analysis.clause.startChar - b.analysis.clause.startChar);
 
-  useEffect(() => {
-    if (selectedIndex !== null && clauseRefs.current[selectedIndex]) {
-      clauseRefs.current[selectedIndex]?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
+    for (const { analysis, originalIndex } of sorted) {
+      const start = analysis.clause.startChar;
+      const end = analysis.clause.endChar;
+
+      if (start > cursor) {
+        result.push({ text: rawText.slice(cursor, start), clauseIndex: null, severity: null });
+      }
+
+      result.push({
+        text: rawText.slice(start, end),
+        clauseIndex: originalIndex,
+        severity: analysis.severity,
       });
+
+      cursor = end;
     }
-  }, [selectedIndex]);
+
+    if (cursor < rawText.length) {
+      result.push({ text: rawText.slice(cursor), clauseIndex: null, severity: null });
+    }
+
+    return result;
+  }, [rawText, clauses]);
 
   return (
-    <div className="space-y-1">
-      {clauses.map((analysis, i) => {
-        const isSelected = selectedIndex === i;
-        const bg = isSelected
-          ? severityBgSelected[analysis.severity]
-          : severityBg[analysis.severity];
+    <div className="max-w-3xl mx-auto px-2">
+      <div className="text-[14px] leading-[1.75] text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+        {segments.map((seg, i) => {
+          if (seg.clauseIndex === null) {
+            return <span key={i}>{seg.text}</span>;
+          }
 
-        return (
-          <div
-            key={i}
-            ref={(el) => { clauseRefs.current[i] = el; }}
-            onClick={() => onClauseClick(i)}
-            className={`
-              border-l-4 rounded-r-md px-4 py-3 cursor-pointer transition-all duration-150
-              ${bg}
-            `}
-          >
-            {/* Clause header */}
-            <div className="flex items-center gap-2 mb-1">
-              <SeverityIcon
-                severity={analysis.severity}
-                className={severityIconColor[analysis.severity]}
-              />
-              <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
-                {analysis.clause.title}
-              </span>
-              {analysis.ruleHits.length > 0 && (
-                <span className="text-[10px] font-bold uppercase bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
-                  {analysis.ruleHits.length} {analysis.ruleHits.length === 1 ? "flag" : "flags"}
-                </span>
-              )}
-              {analysis.bestMatch && (
-                <span className="text-[10px] text-gray-400 ml-auto">
-                  {(analysis.bestMatch.similarity * 100).toFixed(0)}% match
-                </span>
-              )}
-            </div>
+          const isSelected = selectedIndex === seg.clauseIndex;
+          const bg = isSelected
+            ? severityBgSelected[seg.severity!]
+            : severityBg[seg.severity!];
 
-            {/* Clause text */}
-            <p className={`text-sm leading-relaxed whitespace-pre-wrap text-gray-800 ${
-              isSelected ? "" : "line-clamp-4"
-            }`}>
-              {analysis.clause.text}
-            </p>
-
-            {!isSelected && analysis.clause.text.length > 300 && (
-              <span className="text-xs text-gray-400 mt-1 block">Click to expand...</span>
-            )}
-          </div>
-        );
-      })}
+          return (
+            <span
+              key={i}
+              onClick={() => onClauseClick(seg.clauseIndex!)}
+              className={`rounded-sm cursor-pointer transition-colors duration-150 ${bg} hover:brightness-95`}
+            >
+              {seg.text}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -56,4 +56,5 @@ export interface AnalysisReport {
   };
   overallRiskScore: number; // 0-100
   clauses: ClauseAnalysis[];
+  rawText: string;
 }
