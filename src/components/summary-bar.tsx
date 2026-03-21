@@ -1,13 +1,17 @@
 "use client";
 
-import { Shield } from "lucide-react";
+import { Shield, ArrowLeft, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { AnalysisReport } from "@/types";
 
 interface SummaryBarProps {
   report: AnalysisReport;
+  fileName: string;
+  onNewAnalysis: () => void;
+  onExportPdf: () => void;
 }
 
-export function SummaryBar({ report }: SummaryBarProps) {
+export function SummaryBar({ report, fileName, onNewAnalysis, onExportPdf }: SummaryBarProps) {
   const { summary, overallRiskScore, contractType, totalClauses } = report;
 
   const riskColor =
@@ -32,7 +36,7 @@ export function SummaryBar({ report }: SummaryBarProps) {
         : "High Risk";
 
   return (
-    <div className="bg-white dark:bg-gray-950 border-b px-4 py-3">
+    <div className="bg-white dark:bg-gray-950 border-b px-4 py-4">
       <div className="flex items-center gap-6 flex-wrap">
         {/* Risk score */}
         <div className="flex items-center gap-2">
@@ -76,7 +80,16 @@ export function SummaryBar({ report }: SummaryBarProps) {
         </div>
 
         <span className="text-xs text-gray-400">{totalClauses} clauses</span>
+
+        {/* Export — pushed to the right */}
+        <div className="ml-auto">
+          <Button variant="outline" size="sm" onClick={onExportPdf}>
+            <Download className="w-4 h-4 mr-1" />
+            Export PDF
+          </Button>
+        </div>
       </div>
+
     </div>
   );
 }

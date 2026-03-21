@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Shield, ArrowLeft, FileText, Cloud, Download } from "lucide-react";
+import { Shield, ArrowLeft, FileText, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload-zone";
 import { AnalysisProgress } from "@/components/analysis-progress";
@@ -166,25 +166,8 @@ export default function Home() {
             <span className="text-xl font-bold tracking-tight">ClauseGuard</span>
           </div>
           <div className="flex items-center gap-3">
-            {view === "report" && report && (
-              <>
-                <span className="text-sm text-gray-400">{fileName}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    const { exportAnalysisPdf } = await import("@/lib/export-pdf");
-                    exportAnalysisPdf(report, fileName);
-                  }}
-                >
-                  <Download className="w-4 h-4 mr-1" />
-                  Export PDF
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleReset}>
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  New Analysis
-                </Button>
-              </>
+            {view === "report" && (
+              <span className="text-sm text-gray-400">{fileName}</span>
             )}
             {view === "upload" && (
               <Button variant="outline" size="sm" onClick={() => setView("select-type")}>
@@ -298,9 +281,23 @@ export default function Home() {
       {/* Report view */}
       {view === "report" && report && (
         <>
-          <SummaryBar report={report} />
+          <SummaryBar
+            report={report}
+            fileName={fileName}
+            onNewAnalysis={handleReset}
+            onExportPdf={async () => {
+              const { exportAnalysisPdf } = await import("@/lib/export-pdf");
+              exportAnalysisPdf(report, fileName);
+            }}
+          />
           <div className="flex-1 flex overflow-hidden">
             <div className="flex-1 overflow-y-auto border-r bg-white dark:bg-gray-950 p-4">
+              <div className="mb-3">
+                <Button variant="outline" size="sm" onClick={handleReset}>
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Back
+                </Button>
+              </div>
               <DocumentViewer
                 fileUrl={fileUrl}
                 fileType={fileType}
