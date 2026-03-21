@@ -273,9 +273,11 @@ export default function Home() {
                 onClauseClick={setSelectedClause}
               />
             </div>
-            <div className="w-[400px] flex-shrink-0 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4">
+            <div className="w-[400px] flex-shrink-0 overflow-hidden bg-gray-50 dark:bg-gray-900">
               <DetailPanel
-                analysis={selectedClause !== null ? report.clauses[selectedClause] : null}
+                clauses={report.clauses}
+                selectedIndex={selectedClause}
+                onClauseClick={(i) => setSelectedClause(i < 0 ? null : i)}
               />
             </div>
           </div>
