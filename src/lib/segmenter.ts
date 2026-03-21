@@ -1,5 +1,6 @@
 import { ExtractedClause } from "@/types";
 
+// Patterns that indicate the START of a new clause/section
 const SECTION_PATTERNS = [
   /^(\d+\.?\d*\.?\d*)\s+[A-Z]/m,           // "1. DEFINITIONS", "3.2 Payment"
   /^(Section|Article|Clause)\s+\d+/im,       // "Section 5", "Article III"
@@ -7,11 +8,38 @@ const SECTION_PATTERNS = [
   /^[IVXLCDM]+\.\s+/im,                      // Roman numerals: "IV. Termination"
 ];
 
-const HEADER_REGEX = /^(?:(?:\d+\.?\d*\.?\d*)\s+[A-Z]|(?:Section|Article|Clause)\s+\d+|[A-Z][A-Z\s]{3,}$|[IVXLCDM]+\.\s+)/im;
+// Extract a clean short title from a header line
+// "6. Relationships. Nothing contained in this Agreement..." → "Relationships"
+// "Section 5 - Termination Rights" → "Termination Rights"
+// "LIMITATION OF LIABILITY" → "LIMITATION OF LIABILITY"
+function extractTitle(headerLine: string): string {
+  let title = headerLine.trim();
+
+  // Remove leading number: "6. " or "3.2 " or "12 "
+  title = title.replace(/^\d+\.?\d*\.?\d*\s+/, "");
+
+  // Remove "Section X", "Article X", "Clause X" prefix
+  title = title.replace(/^(Section|Article|Clause)\s+\d+\.?\s*/i, "");
+
+  // Remove Roman numeral prefix: "IV. "
+  title = title.replace(/^[IVXLCDM]+\.\s+/i, "");
+
+  // Take only up to the first sentence boundary (period followed by space and uppercase)
+  // This separates "Relationships. Nothing contained..." → "Relationships"
+  const sentenceEnd = title.match(/^([^.]+)\.\s+[A-Z]/);
+  if (sentenceEnd) {
+    title = sentenceEnd[1];
+  }
+
+  // Remove trailing punctuation
+  title = title.replace(/[.:]\s*$/, "").trim();
+
+  return title || "Untitled Clause";
+}
 
 interface RawSection {
   title: string;
-  text: string;
+  fullText: string; // the COMPLETE text of this clause (header line + all body lines)
   startChar: number;
   endChar: number;
 }
@@ -27,67 +55,61 @@ export function segmentClauses(text: string): ExtractedClause[] {
     const isHeader = trimmed.length > 0 && SECTION_PATTERNS.some((p) => p.test(trimmed));
 
     if (isHeader) {
+      // Close previous section
       if (currentSection) {
         currentSection.endChar = charOffset;
-        currentSection.text = currentSection.text.trim();
+        currentSection.fullText = currentSection.fullText.trim();
         sections.push(currentSection);
       }
+      // Start new section — include the header line IN the clause text
       currentSection = {
-        title: trimmed.replace(/^\d+\.?\d*\.?\d*\s+/, "").replace(/^(Section|Article|Clause)\s+\d+\.?\s*/i, ""),
-        text: "",
+        title: extractTitle(trimmed),
+        fullText: line + "\n",
         startChar: charOffset,
         endChar: charOffset,
       };
     } else if (currentSection) {
-      currentSection.text += line + "\n";
+      currentSection.fullText += line + "\n";
     } else {
       // Text before first header — create an implicit "Preamble" section
       if (trimmed.length > 0) {
         currentSection = {
           title: "Preamble",
-          text: line + "\n",
+          fullText: line + "\n",
           startChar: charOffset,
           endChar: charOffset,
         };
       }
     }
-    charOffset += line.length + 1; // +1 for newline
+    charOffset += line.length + 1;
   }
 
   // Push the last section
   if (currentSection) {
     currentSection.endChar = charOffset;
-    currentSection.text = currentSection.text.trim();
+    currentSection.fullText = currentSection.fullText.trim();
     sections.push(currentSection);
   }
 
   // Merge fragments shorter than 50 characters with the previous section
   const merged: RawSection[] = [];
   for (const section of sections) {
-    if (section.text.length < 50 && merged.length > 0) {
+    if (section.fullText.length < 50 && merged.length > 0) {
       const prev = merged[merged.length - 1];
-      prev.text += "\n" + section.title + "\n" + section.text;
+      prev.fullText += "\n" + section.fullText;
       prev.endChar = section.endChar;
     } else {
       merged.push(section);
     }
   }
 
-  // Convert to ExtractedClause
   return merged.map((section, index) => ({
     index,
-    title: cleanTitle(section.title),
-    text: section.text,
+    title: section.title,
+    text: section.fullText,
     startChar: section.startChar,
     endChar: section.endChar,
   }));
-}
-
-function cleanTitle(title: string): string {
-  return title
-    .replace(/[.:]\s*$/, "")
-    .replace(/^\d+\.?\d*\.?\d*\s*/, "")
-    .trim() || "Untitled Clause";
 }
 
 export function hasEnoughStructure(clauses: ExtractedClause[]): boolean {

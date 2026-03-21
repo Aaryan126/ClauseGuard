@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import { useMemo } from "react";
 import { ClauseAnalysis, Severity } from "@/types";
 
-// Dynamically import PdfViewer (needs browser APIs, can't SSR)
 const PdfViewer = dynamic(() => import("./pdf-viewer").then((m) => ({ default: m.PdfViewer })), {
   ssr: false,
   loading: () => <div className="text-sm text-gray-400 py-8 text-center">Loading viewer...</div>,
@@ -25,13 +24,13 @@ export function DocumentViewer({ fileUrl, fileType, rawText, clauses, selectedIn
       <PdfViewer
         fileUrl={fileUrl}
         clauses={clauses}
+        rawText={rawText}
         selectedIndex={selectedIndex}
         onClauseClick={onClauseClick}
       />
     );
   }
 
-  // Fallback: text view for DOCX/TXT
   return (
     <TextDocumentViewer
       rawText={rawText}

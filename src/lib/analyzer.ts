@@ -13,15 +13,28 @@ const CONTRACT_TYPE_LABELS: Record<ContractType, string> = {
   saas: "SaaS Agreement",
 };
 
+// Analyze from pre-extracted text (used for PDFs where client extracts text via pdfjs)
+export async function analyzeText(
+  text: string,
+  contractType: ContractType
+): Promise<AnalysisReport> {
+  return runAnalysisPipeline(text, contractType);
+}
+
+// Analyze from file buffer (used for DOCX/TXT where server parses the file)
 export async function analyzeContract(
   buffer: Buffer,
   filename: string,
   contractType: ContractType
 ): Promise<AnalysisReport> {
-  // Step 1: Parse the document
   const text = await parseDocument(buffer, filename);
+  return runAnalysisPipeline(text, contractType);
+}
 
-  // Step 2: Segment into clauses
+async function runAnalysisPipeline(
+  text: string,
+  contractType: ContractType
+): Promise<AnalysisReport> {
   const clauses = segmentClauses(text);
 
   if (clauses.length === 0) {

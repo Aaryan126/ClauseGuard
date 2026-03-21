@@ -72,25 +72,44 @@ export default function Home() {
     const url = URL.createObjectURL(file);
     fileUrlRef.current = url;
     setFileUrl(url);
-    setFileType(file.name.split(".").pop()?.toLowerCase() || "");
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    setFileType(ext);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("contractType", contractType);
+      if (ext === "pdf") {
+        // PDF flow: extract text on the client using pdfjs, then send text for analysis.
+        // This ensures the server analyzes the exact same text the PDF viewer will display,
+        // eliminating any offset mismatch between server and client.
+        const { extractPdfText } = await import("@/components/pdf-viewer");
+        const pdfText = await extractPdfText(url);
 
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        body: formData,
-      });
+        const response = await fetch("/api/analyze-text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: pdfText, contractType }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Analysis failed.");
 
-      if (!response.ok) {
-        throw new Error(data.error || "Analysis failed.");
+        setReport(data);
+      } else {
+        // DOCX/TXT flow: send file to server for parsing + analysis
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("contractType", contractType);
+
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Analysis failed.");
+
+        setReport(data);
       }
 
-      setReport(data);
       setView("report");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
