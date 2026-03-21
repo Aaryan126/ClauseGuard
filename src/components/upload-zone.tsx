@@ -2,14 +2,15 @@
 
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileText, AlertCircle } from "lucide-react";
+import { Upload } from "lucide-react";
 
 interface UploadZoneProps {
   onFileSelected: (file: File) => void;
   isAnalyzing: boolean;
+  active?: boolean;
 }
 
-export function UploadZone({ onFileSelected, isAnalyzing }: UploadZoneProps) {
+export function UploadZone({ onFileSelected, isAnalyzing, active = false }: UploadZoneProps) {
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback(
@@ -48,43 +49,31 @@ export function UploadZone({ onFileSelected, isAnalyzing }: UploadZoneProps) {
   });
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div>
       <div
         {...getRootProps()}
         className={`
-          border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200
-          ${isDragActive ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"}
+          border-2 border-dashed rounded-lg px-6 py-8 text-center cursor-pointer transition-all
+          ${isDragActive
+            ? "border-blue-900 bg-blue-950/5 dark:border-blue-400 dark:bg-blue-900/10"
+            : active
+              ? "border-blue-900/50 hover:border-blue-900 dark:border-blue-400/50 dark:hover:border-blue-400"
+              : "border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+          }
           ${isAnalyzing ? "opacity-50 cursor-not-allowed" : ""}
         `}
       >
         <input {...getInputProps()} />
-        <div className="flex flex-col items-center gap-4">
-          {isDragActive ? (
-            <>
-              <Upload className="w-12 h-12 text-blue-500" />
-              <p className="text-lg font-medium text-blue-600">Drop your contract here</p>
-            </>
-          ) : (
-            <>
-              <FileText className="w-12 h-12 text-gray-400" />
-              <div>
-                <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                  Drop your contract here, or click to browse
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Supports PDF, DOCX, and TXT files (max 10MB)
-                </p>
-              </div>
-            </>
-          )}
+        <div className="flex flex-col items-center gap-2">
+          <Upload className={`w-5 h-5 ${active ? "text-blue-900/60 dark:text-blue-400/60" : "text-gray-400"}`} />
+          <p className="text-[13px] text-gray-500">
+            {isDragActive ? "Drop file here" : "Drop a file here, or click to browse"}
+          </p>
         </div>
       </div>
 
       {error && (
-        <div className="mt-4 flex items-center gap-2 text-red-600 text-sm">
-          <AlertCircle className="w-4 h-4" />
-          {error}
-        </div>
+        <p className="mt-2 text-[13px] text-red-600">{error}</p>
       )}
     </div>
   );
