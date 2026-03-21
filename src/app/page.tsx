@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Shield, ArrowLeft, FileText, Cloud } from "lucide-react";
+import { Shield, ArrowLeft, FileText, Cloud, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload-zone";
 import { AnalysisProgress } from "@/components/analysis-progress";
 import { SummaryBar } from "@/components/summary-bar";
 import { DocumentViewer } from "@/components/document-viewer";
 import { DetailPanel } from "@/components/detail-panel";
+import { HistoryDropdown } from "@/components/history-dropdown";
+import { saveAnalysis, type HistoryEntry } from "@/lib/history-db";
 import { AnalysisReport, ContractType } from "@/types";
 
 type ViewState = "select-type" | "upload" | "analyzing" | "report" | "error";
@@ -76,10 +78,9 @@ export default function Home() {
     setFileType(ext);
 
     try {
+      let data: AnalysisReport;
+
       if (ext === "pdf") {
-        // PDF flow: extract text on the client using pdfjs, then send text for analysis.
-        // This ensures the server analyzes the exact same text the PDF viewer will display,
-        // eliminating any offset mismatch between server and client.
         const { extractPdfText } = await import("@/components/pdf-viewer");
         const pdfText = await extractPdfText(url);
 
@@ -89,12 +90,9 @@ export default function Home() {
           body: JSON.stringify({ text: pdfText, contractType }),
         });
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Analysis failed.");
-
-        setReport(data);
+        data = await response.json();
+        if (!response.ok) throw new Error(data && "error" in data ? (data as Record<string, string>).error : "Analysis failed.");
       } else {
-        // DOCX/TXT flow: send file to server for parsing + analysis
         const formData = new FormData();
         formData.append("file", file);
         formData.append("contractType", contractType);
@@ -104,17 +102,41 @@ export default function Home() {
           body: formData,
         });
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Analysis failed.");
-
-        setReport(data);
+        data = await response.json();
+        if (!response.ok) throw new Error(data && "error" in data ? (data as Record<string, string>).error : "Analysis failed.");
       }
 
+      setReport(data);
       setView("report");
+
+      // Save to history (fire-and-forget)
+      saveAnalysis(file.name, ext, file, data).catch(() => {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
       setView("error");
     }
+  };
+
+  const handleHistorySelect = (entry: HistoryEntry) => {
+    // Revoke any previous blob URL
+    if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
+
+    // Restore original file as blob URL if stored
+    if (entry.fileBlob) {
+      const url = URL.createObjectURL(entry.fileBlob);
+      fileUrlRef.current = url;
+      setFileUrl(url);
+      setFileType(entry.fileType);
+    } else {
+      fileUrlRef.current = null;
+      setFileUrl(null);
+      setFileType("txt");
+    }
+
+    setReport(entry.report);
+    setFileName(entry.fileName);
+    setSelectedClause(null);
+    setView("report");
   };
 
   const handleReset = () => {
@@ -144,9 +166,20 @@ export default function Home() {
             <span className="text-xl font-bold tracking-tight">ClauseGuard</span>
           </div>
           <div className="flex items-center gap-3">
-            {view === "report" && (
+            {view === "report" && report && (
               <>
                 <span className="text-sm text-gray-400">{fileName}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const { exportAnalysisPdf } = await import("@/lib/export-pdf");
+                    exportAnalysisPdf(report, fileName);
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  Export PDF
+                </Button>
                 <Button variant="outline" size="sm" onClick={handleReset}>
                   <ArrowLeft className="w-4 h-4 mr-1" />
                   New Analysis
@@ -158,6 +191,9 @@ export default function Home() {
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Change Type
               </Button>
+            )}
+            {view !== "analyzing" && (
+              <HistoryDropdown onSelect={handleHistorySelect} />
             )}
           </div>
         </div>
@@ -254,6 +290,7 @@ export default function Home() {
                 <Button onClick={handleReset}>Try Again</Button>
               </div>
             )}
+
           </div>
         </div>
       )}
