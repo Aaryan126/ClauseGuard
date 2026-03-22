@@ -355,16 +355,14 @@ export default function Home() {
             }}
           />
           <div className="flex-1 flex overflow-hidden">
-            <div className="flex-1 overflow-y-auto border-r border-gray-200 bg-gray-50/50 dark:bg-gray-950 p-4">
-              <div className="mb-3">
-                <button
-                  onClick={handleReset}
-                  className="inline-flex items-center gap-1.5 text-[12px] font-medium text-blue-900/60 hover:text-blue-900 dark:text-blue-400/60 dark:hover:text-blue-400 transition-colors cursor-pointer"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to home
-                </button>
-              </div>
+            <div className="flex-1 overflow-y-auto border-r border-gray-200 bg-gray-50/50 dark:bg-gray-950 p-4 relative">
+              <button
+                onClick={handleReset}
+                className="sticky top-0 z-10 inline-flex items-center gap-1.5 text-[12px] font-medium text-blue-900/60 hover:text-blue-900 dark:text-blue-400/60 dark:hover:text-blue-400 transition-colors cursor-pointer bg-white dark:bg-gray-900 px-2.5 py-1.5 rounded-md shadow-sm border border-gray-200 dark:border-gray-800 mb-3"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back to home
+              </button>
               <DocumentViewer
                 fileUrl={fileUrl}
                 fileType={fileType}
