@@ -127,7 +127,8 @@ function ExpandedDetail({
   onToggleText?: () => void;
 }) {
   const [refOpen, setRefOpen] = useState(false);
-  const { bestMatch, ruleHits, severity, flagSource, explanation, normalVersion, suggestedAction } = analysis;
+  const [copied, setCopied] = useState(false);
+  const { bestMatch, ruleHits, severity, flagSource, explanation, normalVersion, suggestedAction, proposedRevision } = analysis;
 
   return (
     <div className={`border-t ${config.border} ${config.bg} px-4 pb-5 pt-3 space-y-5`}>
@@ -211,6 +212,31 @@ function ExpandedDetail({
           </h4>
           <div className="rounded-md border-2 border-blue-900/20 bg-blue-950/5 dark:border-blue-400/20 dark:bg-blue-900/10 p-3">
             <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 leading-[1.6]">{suggestedAction}</p>
+          </div>
+        </section>
+      )}
+
+      {/* Proposed revision — copy-ready replacement */}
+      {proposedRevision && (
+        <section>
+          <div className="flex items-center justify-between mb-1.5">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-blue-900 dark:text-blue-400">
+              Proposed Revision
+            </h4>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(proposedRevision);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="text-[11px] font-medium text-blue-900/50 hover:text-blue-900 dark:text-blue-400/50 dark:hover:text-blue-400 transition-colors cursor-pointer"
+            >
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <div className="rounded-md border-2 border-blue-900/15 bg-white dark:bg-gray-900 p-3">
+            <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-[1.7] whitespace-pre-wrap">{proposedRevision}</p>
           </div>
         </section>
       )}

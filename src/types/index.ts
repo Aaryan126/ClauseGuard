@@ -51,6 +51,7 @@ export interface ClauseAnalysis {
   explanation?: string;
   normalVersion?: string;
   suggestedAction?: string;
+  proposedRevision?: string;
 }
 
 export interface AnalysisReport {

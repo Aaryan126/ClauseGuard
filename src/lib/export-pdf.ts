@@ -274,7 +274,7 @@ export async function exportAnalysisPdf(report: AnalysisReport, fileName: string
     analysis: ClauseAnalysis,
     ensureSpace: (n: number) => void
   ) {
-    const { ruleHits, explanation, normalVersion, suggestedAction, severity, flagSource } = analysis;
+    const { ruleHits, explanation, normalVersion, suggestedAction, proposedRevision, severity, flagSource } = analysis;
     const color = COLORS[severity];
 
     ensureSpace(12);
@@ -382,6 +382,26 @@ export async function exportAnalysisPdf(report: AnalysisReport, fileName: string
       doc.setTextColor(60, 60, 60);
       const actionLines = doc.splitTextToSize(suggestedAction, CONTENT_W - 16) as string[];
       for (const line of actionLines) {
+        ensureSpace(LINE_H_SMALL);
+        doc.text(line, MARGIN + 10, y);
+        y += LINE_H_SMALL;
+      }
+      y += 2;
+    }
+
+    // Proposed revision
+    if (proposedRevision) {
+      ensureSpace(8);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(FONT_LABEL);
+      doc.setTextColor(30, 64, 120);
+      doc.text("Proposed revision:", MARGIN + 10, y);
+      y += 3.5;
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(60, 60, 60);
+      const revLines = doc.splitTextToSize(proposedRevision, CONTENT_W - 16) as string[];
+      for (const line of revLines) {
         ensureSpace(LINE_H_SMALL);
         doc.text(line, MARGIN + 10, y);
         y += LINE_H_SMALL;
