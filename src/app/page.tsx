@@ -28,7 +28,7 @@ const CONTRACT_OPTIONS: {
     shortLabel: "NDA",
     description: "Confidentiality agreements, mutual NDAs, unilateral NDAs",
     standards: "Common Paper Mutual NDA v1.0",
-    clauseCount: 10,
+    clauseCount: 16,
   },
   {
     type: "saas",
@@ -36,7 +36,15 @@ const CONTRACT_OPTIONS: {
     shortLabel: "SaaS",
     description: "Software subscriptions, cloud service terms, service agreements",
     standards: "Bonterms Cloud Terms v1.0",
-    clauseCount: 18,
+    clauseCount: 29,
+  },
+  {
+    type: "consulting",
+    label: "Consulting / Services Agreement",
+    shortLabel: "Consulting",
+    description: "Freelance contracts, professional services, consulting engagements",
+    standards: "Bonterms PSA v1.2",
+    clauseCount: 23,
   },
 ];
 
@@ -194,7 +202,7 @@ export default function Home() {
       {view !== "report" && (
         <div className="flex-1 overflow-auto">
           {view === "select-type" && (
-            <div className="max-w-3xl mx-auto px-4 py-14">
+            <div className="max-w-4xl mx-auto px-4 py-14">
               {/* Hero */}
               <div className="text-center">
                 <div className="inline-flex items-center gap-1.5 bg-blue-950/5 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 px-3 py-1 rounded-full text-[12px] font-medium mb-5 tracking-wide">
@@ -216,7 +224,7 @@ export default function Home() {
                 <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 mb-3 text-center uppercase tracking-wider">
                   Select contract type
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {CONTRACT_OPTIONS.map((option) => {
                     const isActive = contractType === option.type;
                     return (
@@ -277,7 +285,7 @@ export default function Home() {
                     {
                       number: "01",
                       title: "Compare",
-                      desc: "Each clause is embedded and compared against 45 lawyer-drafted standard templates using semantic similarity.",
+                      desc: "Each clause is embedded and compared against 68 lawyer-drafted standard templates using semantic similarity.",
                     },
                     {
                       number: "02",

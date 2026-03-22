@@ -1,4 +1,4 @@
-export type ContractType = "nda" | "saas";
+export type ContractType = "nda" | "saas" | "consulting";
 
 export interface StandardClause {
   id: string;

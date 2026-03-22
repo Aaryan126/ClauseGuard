@@ -705,6 +705,357 @@ const rawStandards: RawStandard[] = [
     sourceRef: "Bonterms Cloud Terms v1.0 §22.14",
     role: "anchor",
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONSULTING / PROFESSIONAL SERVICES AGREEMENT CLAUSES
+  // Source: Bonterms Professional Services Agreement v1.2 (CC BY 4.0)
+  // https://github.com/Bonterms/Professional-Services-Agreement
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: "consulting-services-001",
+    contractType: "consulting",
+    category: "Services",
+    clauseName: "Scope of Services",
+    standardText:
+      "Provider will provide the Services in a timely manner and provide each Deliverable no later than the delivery dates specified in the SOW. Provider's ability to provide a Deliverable or other element of the Services may be dependent upon Customer's provision of information or other Customer Materials to Provider. Provider will notify Customer in the event the Services may be delayed due to Customer's failure to provide a Dependency when required by the SOW.",
+    summary:
+      "Provider delivers services per the SOW timeline. Delays caused by the customer not providing required materials are the customer's responsibility.",
+    aggressiveIndicators: ["best efforts only", "no guaranteed delivery date", "provider may change scope"],
+    normalRange: { description: "Should reference a clear SOW with delivery dates. Mutual dependency acknowledgment is standard. Unilateral scope changes by provider are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §3.1-3.2",
+    role: "anchor",
+  },
+  {
+    id: "consulting-change-orders-001",
+    contractType: "consulting",
+    category: "Change Management",
+    clauseName: "Change Orders",
+    standardText:
+      "Either Customer or Provider may request a change to Deliverables, Services or other elements of a SOW upon notice to the other party. Within 10 days of receipt of a Change Request, each party's Project Leads will meet to discuss the Change Request. Provider will then prepare a change order describing proposed changes to the SOW, including any adjustments to the schedule, fees or expenses. Change Orders are not binding unless executed by both parties.",
+    summary:
+      "Either party can request changes. Changes require discussion, a written change order, and mutual agreement before taking effect.",
+    aggressiveIndicators: ["provider may change scope unilaterally", "additional fees at provider's discretion"],
+    normalRange: { description: "Mutual change order process with written agreement required. Unilateral changes or automatic fee increases are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §3.3",
+    role: "anchor",
+  },
+  {
+    id: "consulting-acceptance-001",
+    contractType: "consulting",
+    category: "Acceptance",
+    clauseName: "Deliverable Acceptance",
+    standardText:
+      "Customer will have 15 days following receipt of each Deliverable to review such Deliverable for material conformance to the Specifications. If Customer determines that a Deliverable is not in conformance with the Specifications, it will notify Provider and specify the nonconformance in reasonable detail. Provider will have 15 days following receipt of a Review Notice to remedy the identified nonconformance and resubmit the Deliverable. If Customer fails to issue a Review Notice within the Test Period, the applicable Deliverable will be deemed accepted.",
+    summary:
+      "Customer gets 15 days to review deliverables against specs. Provider gets 15 days to fix issues. Silence means acceptance.",
+    aggressiveIndicators: ["immediate acceptance", "no right to reject", "acceptance upon delivery"],
+    normalRange: { description: "15-30 day review period with remediation rights is standard. No review period or automatic acceptance upon delivery is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §3.4",
+    role: "anchor",
+  },
+  {
+    id: "consulting-ip-licensed-001",
+    contractType: "consulting",
+    category: "IP Rights",
+    clauseName: "IP Rights — Licensed Deliverables",
+    standardText:
+      "Provider hereby grants to Customer a non-exclusive, royalty-free, irrevocable, worldwide, transferable, perpetual right and license (with right to sublicense through multiple tiers) to make, have made, sell, use, import, export, execute, reproduce, distribute, modify, adapt, publicly display, publicly perform, prepare derivative works of, and disclose Licensed Deliverables. Neither party grants the other any rights or licenses not expressly set out in this Agreement.",
+    summary:
+      "Customer gets a broad, perpetual license to use deliverables for any purpose. Provider retains ownership but grants extensive usage rights.",
+    aggressiveIndicators: ["all IP assigned to provider", "customer receives no license", "provider retains exclusive rights"],
+    normalRange: { description: "Broad perpetual license for customer is standard for licensed deliverables. Restricting customer's use of paid-for deliverables is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §6.2",
+    role: "anchor",
+  },
+  {
+    id: "consulting-ip-assigned-001",
+    contractType: "consulting",
+    category: "IP Rights",
+    clauseName: "IP Rights — Assigned Deliverables (Work for Hire)",
+    standardText:
+      "Assigned Deliverables will be the sole and exclusive property of Customer. Provider will and hereby does irrevocably assign to Customer all right, title and interest in and to Assigned Deliverables and all related Intellectual Property Rights. To the fullest extent permitted by law, all copyrightable aspects of Assigned Deliverables will be deemed to be a 'work made for hire'. Provider represents and warrants that it has all necessary rights to grant the licenses and make the assignments set forth in this Agreement.",
+    summary:
+      "Customer owns all assigned deliverables outright, including all IP rights. Work is treated as 'work for hire' under copyright law.",
+    aggressiveIndicators: ["includes pre-existing IP", "includes background technology", "all inventions ever conceived"],
+    normalRange: { description: "Assignment of project-specific deliverables is standard. Assignment should not include provider's pre-existing IP or background technology." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §6.3",
+    role: "anchor",
+  },
+  {
+    id: "consulting-performance-warranty-001",
+    contractType: "consulting",
+    category: "Warranty",
+    clauseName: "Performance Warranty",
+    standardText:
+      "Provider represents and warrants that it will perform the Services in a timely, professional and workmanlike manner and with a degree of quality equal to or higher than applicable industry standards for similar services and all Services and each Deliverable will conform in all material respects with the Specifications. Provider will use reasonable efforts to correct a verified breach of the Performance Warranty reported by Customer. If Provider fails to do so within 30 days, then either party may terminate the SOW, in which case Provider will refund fees paid for the non-compliant Services.",
+    summary:
+      "Provider warrants professional quality work that meets specs. 30-day fix period for warranty issues, with refund if unfixed.",
+    aggressiveIndicators: ["no warranty", "as-is", "provider makes no representations"],
+    normalRange: { description: "Professional workmanship warranty with remediation period and refund is standard. Complete disclaimer of warranties on services is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §7.2",
+    role: "anchor",
+  },
+  {
+    id: "consulting-ip-warranty-001",
+    contractType: "consulting",
+    category: "Warranty",
+    clauseName: "IP Non-Infringement Warranty",
+    standardText:
+      "Provider represents and warrants that: Provider has and will have all necessary rights to grant the licenses and make the assignments set forth in this Agreement. Neither the Services nor Deliverables, nor any element thereof, will infringe the Intellectual Property Rights of any third party, incorporate any third-party confidential information or be subject to any restrictions, liens, pledges, security interests, encumbrances or encroachments.",
+    summary:
+      "Provider guarantees the work doesn't infringe anyone's IP, doesn't include unauthorized third-party material, and is free of encumbrances.",
+    aggressiveIndicators: ["customer assumes all IP risk", "provider disclaims IP warranties"],
+    normalRange: { description: "Non-infringement warranty from provider is standard for professional services. Disclaiming IP warranties shifts risk unfairly to the customer." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §7.3",
+    role: "anchor",
+  },
+  {
+    id: "consulting-fees-001",
+    contractType: "consulting",
+    category: "Payment",
+    clauseName: "Fees and Payment Terms",
+    standardText:
+      "Customer will pay the fees described in the SOW. Unless the SOW states otherwise, all amounts are due within 30 days after the invoice date. All fees are nonrefundable except as expressly set forth in this Agreement. Late payments are subject to a charge of 1.5% per month or the maximum amount allowed by Law, whichever is less. Customer will have no obligation to pay any fees or expenses that Provider invoices more than 120 days after the fees or expenses were incurred.",
+    summary:
+      "Payment within 30 days of invoice. Late fees at 1.5% per month. Provider must invoice within 120 days or loses the right to collect.",
+    aggressiveIndicators: ["payment due immediately", "no right to dispute", "all fees non-refundable under any circumstances"],
+    normalRange: { description: "Net 30 payment with late fees and invoice cutoff is standard. Payment due on receipt or no dispute rights are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §10",
+    role: "anchor",
+  },
+  {
+    id: "consulting-term-001",
+    contractType: "consulting",
+    category: "Term",
+    clauseName: "Term and Termination",
+    standardText:
+      "This Agreement starts on the Effective Date and continues until the end of all SOW Terms, unless sooner terminated in accordance with its terms. Customer may terminate any SOW for any or no reason at any time upon 30 days' notice to Provider, provided that such termination will not become effective until Customer has paid all fees and expenses incurred through the time of termination. Either party may terminate this Agreement if the other party fails to cure a material breach within 30 days after notice, ceases operation without a successor, or seeks bankruptcy protection.",
+    summary:
+      "Agreement runs through all SOWs. Customer can terminate any SOW with 30 days notice (paying for work done). Either party can terminate for material breach with 30-day cure period.",
+    aggressiveIndicators: ["no termination for convenience", "immediate termination without cure", "provider may terminate at will"],
+    normalRange: { description: "Customer termination for convenience with notice and payment for work done is standard. No termination rights or immediate termination without cure period are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §11",
+    role: "anchor",
+  },
+  {
+    id: "consulting-liability-001",
+    contractType: "consulting",
+    category: "Liability",
+    clauseName: "Limitation of Liability",
+    standardText:
+      "Each party's entire liability arising out of or related to this Agreement will not exceed the General Cap. Neither party will have any liability arising out of or related to this Agreement for indirect, special, incidental, reliance or consequential damages or damages for loss of use, lost profits or interruption of business, even if informed of their possibility in advance. General Cap means amounts paid or payable by Customer to Provider under this Agreement in the 12 months immediately preceding the first incident giving rise to liability.",
+    summary:
+      "Liability capped at 12 months of fees paid. No consequential damages for either party. The cap doesn't apply to certain uncapped claims like IP infringement and confidentiality breaches.",
+    aggressiveIndicators: ["unlimited liability", "no cap", "customer assumes all liability"],
+    normalRange: { description: "12-month fee cap with consequential damages waiver is standard. Unlimited liability or one-sided caps are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §12",
+    role: "anchor",
+  },
+  {
+    id: "consulting-indemnification-001",
+    contractType: "consulting",
+    category: "Indemnification",
+    clauseName: "Mutual Indemnification",
+    standardText:
+      "Provider, at its own cost, will defend Customer from and against any Provider-Covered Claims and will indemnify and hold harmless Customer from and against any damages or costs awarded against Customer including reasonable attorneys' fees. Customer, at its own cost, will defend Provider from and against any Customer-Covered Claims. Provider-Covered Claims include third-party actions arising from breach of customer materials obligations or alleging that services or deliverables infringe a third party's intellectual property rights. Customer-Covered Claims include third-party actions alleging that customer materials infringe a third party's intellectual property rights.",
+    summary:
+      "Provider indemnifies customer against IP infringement and data breach claims. Customer indemnifies provider against claims from customer-provided materials. Both cover legal costs.",
+    aggressiveIndicators: ["customer indemnifies for all claims", "no provider indemnification", "unlimited indemnity"],
+    normalRange: { description: "Mutual indemnification with provider covering IP and data claims is standard. One-sided indemnification favoring the provider is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §13",
+    role: "anchor",
+  },
+  {
+    id: "consulting-confidentiality-001",
+    contractType: "consulting",
+    category: "Confidentiality",
+    clauseName: "Confidentiality",
+    standardText:
+      "Each party will use Confidential Information only to fulfill its obligations and exercise its rights under this Agreement, not disclose Confidential Information to third parties without the discloser's prior approval except as permitted in this Agreement, and protect Confidential Information using at least the same precautions recipient uses for its own similar information and no less than a reasonable standard of care. The recipient may disclose Confidential Information to its employees, agents, contractors and other representatives having a legitimate need to know, provided they are bound to confidentiality obligations no less protective than this Agreement.",
+    summary:
+      "Both parties protect each other's confidential information with reasonable care. Disclosure limited to need-to-know personnel bound by confidentiality.",
+    aggressiveIndicators: ["absolute secrecy", "no exceptions", "strictly liable for any disclosure"],
+    normalRange: { description: "Mutual reasonable care standard with need-to-know exceptions is standard. Absolute secrecy or strict liability for any disclosure is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §14",
+    role: "anchor",
+  },
+  {
+    id: "consulting-subcontractors-001",
+    contractType: "consulting",
+    category: "Subcontractors",
+    clauseName: "Subcontractors",
+    standardText:
+      "Provider may not subcontract any element of the Services without the prior approval of Customer. To the extent one or more subcontractors are approved by Customer, Provider will remain directly responsible to Customer for the acts and omissions of each Subcontractor and ensure each Subcontractor is bound in writing to terms equally as protective of Customer as the terms of this Agreement.",
+    summary:
+      "Provider needs customer approval before subcontracting. Provider stays responsible for subcontractor work and must bind them to equivalent terms.",
+    aggressiveIndicators: ["provider may subcontract freely", "no responsibility for subcontractors"],
+    normalRange: { description: "Customer approval required for subcontractors with provider remaining responsible is standard. Free subcontracting without accountability is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §3.5",
+    role: "anchor",
+  },
+  {
+    id: "consulting-customer-materials-001",
+    contractType: "consulting",
+    category: "Customer Materials",
+    clauseName: "Customer Materials and Systems",
+    standardText:
+      "Provider may use Customer Materials solely to the extent necessary to provide the Services to Customer and for no other purpose. Except for Provider's use rights specified in this Agreement, between the parties Customer retains all Intellectual Property Rights and other rights in any Customer Materials. Provider may access and use Customer Systems solely to the extent expressly authorized by Customer in a SOW or otherwise in writing, to the extent necessary to provide the Services, and in strict accordance with any Customer Policies or instructions issued by Customer.",
+    summary:
+      "Provider can only use customer materials and systems for the contracted services. Customer retains all IP rights in their materials. Access is strictly limited to what's authorized.",
+    aggressiveIndicators: ["provider may use for any purpose", "provider acquires rights in customer materials"],
+    normalRange: { description: "Strict purpose limitation with customer retaining IP is standard. Provider acquiring rights in customer materials or using them beyond the engagement is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §8",
+    role: "anchor",
+  },
+  {
+    id: "consulting-independent-contractor-001",
+    contractType: "consulting",
+    category: "Relationship",
+    clauseName: "Independent Contractor Status",
+    standardText:
+      "The parties are independent contractors, not agents, partners or joint venturers. Neither party will make any commitment, by contract or otherwise, binding upon the other or represent that it has any authority to do so. Provider is solely responsible and liable for any employment-related taxes, insurance premiums or other employment benefits respecting Provider's performance of the Services. Neither Provider nor any of Provider's employees, agents or Subcontractors are eligible for any benefits from Customer.",
+    summary:
+      "Provider is an independent contractor, not an employee. Provider handles their own taxes, insurance, and benefits. No authority to bind the other party.",
+    aggressiveIndicators: ["exclusive engagement", "provider may not work for others", "non-compete"],
+    normalRange: { description: "Independent contractor status with provider responsible for own taxes and benefits is standard. Exclusivity requirements or non-compete restrictions are aggressive for consulting." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §17.10",
+    role: "anchor",
+  },
+  {
+    id: "consulting-insurance-001",
+    contractType: "consulting",
+    category: "Insurance",
+    clauseName: "Insurance Requirements",
+    standardText:
+      "Provider will implement and maintain insurance coverage in the types, amounts and duration specified on the Cover Page or applicable SOW. If no Insurance Requirements are identified, Provider will obtain and maintain adequate liability, automobile, workers' compensation, cybersecurity, unemployment compensation, disability or other types of insurance required by law or as is common practice for similar service providers in the industry.",
+    summary:
+      "Provider must carry insurance as specified, or at minimum industry-standard coverage including liability, workers' comp, and cybersecurity insurance.",
+    aggressiveIndicators: ["customer provides all insurance", "provider waives insurance requirements"],
+    normalRange: { description: "Provider maintaining industry-standard insurance is normal. Waiving insurance requirements or shifting all insurance burden to customer is unusual." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §17.9",
+    role: "anchor",
+  },
+  {
+    id: "consulting-force-majeure-001",
+    contractType: "consulting",
+    category: "Force Majeure",
+    clauseName: "Force Majeure",
+    standardText:
+      "Neither party is liable for a delay or failure to perform this Agreement due to a Force Majeure. If a Force Majeure materially adversely affects delivery of the Services for 15 or more consecutive days, either party may terminate the affected SOWs upon notice to the other and Provider will refund to Customer any pre-paid, unused fees for the terminated portion of the SOW Term.",
+    summary:
+      "Neither party is liable for unforeseeable events. If force majeure disrupts services for 15+ days, either party can terminate affected work with a refund.",
+    aggressiveIndicators: ["no termination right during force majeure", "customer must continue paying"],
+    normalRange: { description: "Mutual excuse with termination right after 15 days and refund is standard. Requiring continued payment during extended force majeure is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §17.8",
+    role: "anchor",
+  },
+  {
+    id: "consulting-governing-law-001",
+    contractType: "consulting",
+    category: "Governing Law",
+    clauseName: "Governing Law and Courts",
+    standardText:
+      "The Governing Law governs this Agreement and any Action arising out of or relating to this Agreement, without reference to conflict of law rules. The parties will adjudicate any such Action in the Courts and each party consents to the exclusive jurisdiction and venue of the Courts for these purposes.",
+    summary:
+      "Agreement governed by the specified law. Disputes handled in the specified courts with exclusive jurisdiction.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Should specify a reasonable jurisdiction. Watch for venues that are inconvenient or clearly favor one party." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §17.2",
+    role: "anchor",
+  },
+  {
+    id: "consulting-severability-001",
+    contractType: "consulting",
+    category: "Severability",
+    clauseName: "Waivers and Severability",
+    standardText:
+      "Waivers must be signed by the waiving party's authorized representative and cannot be implied from conduct. If any provision of this Agreement is held invalid, illegal or unenforceable, it will be limited to the minimum extent necessary so the rest of this Agreement remains in effect.",
+    summary:
+      "Waivers must be explicit and signed. If a clause is invalid, it's trimmed rather than voiding the whole agreement.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard waivers and severability clause. Waivers should require written consent." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §17.7",
+    role: "anchor",
+  },
+  {
+    id: "consulting-entire-agreement-001",
+    contractType: "consulting",
+    category: "Entire Agreement",
+    clauseName: "Entire Agreement",
+    standardText:
+      "This Agreement is the parties' entire agreement regarding its subject matter and supersedes any prior or contemporaneous agreements regarding its subject matter. In this Agreement, headings are for convenience only and 'including' and similar terms are to be construed without limitation. Excluding SOWs, terms in business forms, purchase orders or quotes used by either party will not amend or modify this Agreement. This Agreement may be executed in counterparts, each of which is deemed an original and which together form one and the same agreement.",
+    summary:
+      "This is the complete agreement, replacing all prior agreements. Business forms can't modify it. Can be signed in counterparts.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard integration clause. Should supersede prior agreements and prevent modification by standard business forms." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §17.4",
+    role: "anchor",
+  },
+  {
+    id: "consulting-notices-001",
+    contractType: "consulting",
+    category: "Notices",
+    clauseName: "Notices",
+    standardText:
+      "Except as set out in this Agreement, notices, requests, consents and approvals under this Agreement must be in writing to the addresses on the Cover Page and will be deemed given (a) upon receipt if by personal delivery, (b) upon receipt if by certified or registered U.S. mail (return receipt requested), (c) one day after dispatch if by commercial overnight delivery or (d) upon delivery if by email. Either party may update its address with notice to the other.",
+    summary:
+      "Legal notices must be in writing via mail, courier, personal delivery, or email. Addresses can be updated with notice.",
+    aggressiveIndicators: ["by posting on website without notice"],
+    normalRange: { description: "Standard notice clause with multiple delivery methods. Notice solely by posting on a website is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §17.3",
+    role: "anchor",
+  },
+  {
+    id: "consulting-assignment-001",
+    contractType: "consulting",
+    category: "Assignment",
+    clauseName: "Assignment",
+    standardText:
+      "Neither party may assign this Agreement without the prior consent of the other party, except that either party may assign this Agreement, with notice to the other party, in connection with the assigning party's merger, reorganization, acquisition or other transfer of all or substantially all of its assets or voting securities. Any non-permitted assignment is void. This Agreement will bind and inure to the benefit of each party's permitted successors and assigns.",
+    summary:
+      "Neither party can assign without consent, except for mergers/acquisitions. Unauthorized assignments are void.",
+    aggressiveIndicators: ["provider may assign freely", "customer may not assign under any circumstances"],
+    normalRange: { description: "Mutual restriction with M&A exception is standard. One-sided assignment rights are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §17.1",
+    role: "anchor",
+  },
+  {
+    id: "consulting-publicity-001",
+    contractType: "consulting",
+    category: "Publicity",
+    clauseName: "Publicity",
+    standardText:
+      "Neither party may publicly announce this Agreement or otherwise use the other's name or logo without the other party's prior approval (except as required by Laws).",
+    summary:
+      "Neither party can publicly announce the engagement or use the other's branding without permission.",
+    aggressiveIndicators: ["provider may use customer's name freely", "customer grants permission to use logo"],
+    normalRange: { description: "Mutual approval for publicity is standard. One-sided rights to use the other's brand are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms PSA v1.2 §16",
+    role: "anchor",
+  },
 ];
 
 // ─── Embedding Generation ────────────────────────────────────────────────────

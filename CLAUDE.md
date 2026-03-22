@@ -13,8 +13,8 @@ Contract clause analyzer that flags unusual or aggressive clauses compared to in
 
 - **Three-layer detection:** Embeddings (cosine similarity for finding closest standard match) → LLM scoring (Gemini 2.5 Pro judges functional equivalence — replaces rigid similarity thresholds) → 15 aggressive pattern rules with 3 tiers (critical/serious/caution). LLM also generates explanations for flagged clauses.
 - **Rule tiers:** Critical rules (unlimited liability, blanket IP, unilateral amendment, no compelled disclosure) always override to red. Serious rules (non-compete scope/duration, unilateral termination) respect embedding — green→yellow not red. Caution rules (all yellow rules) never escalate severity, shown as informational.
-- **Standard clause sources:** Common Paper Mutual NDA v1.0 (CC BY 4.0) for NDA, Bonterms Cloud Terms v1.0 (CC BY 4.0) for SaaS. Each entry tracks `source`, `sourceRef`, and `role` (anchor/variant).
-- **Standard clause DB:** `src/data/standards.json` — 45 pre-embedded templates (16 NDA + 29 SaaS). Regenerate with `DOTENV_CONFIG_PATH=.env.local npx tsx -r dotenv/config scripts/seed-standards.ts`
+- **Standard clause sources:** Common Paper Mutual NDA v1.0 (CC BY 4.0) for NDA, Bonterms Cloud Terms v1.0 (CC BY 4.0) for SaaS, Bonterms PSA v1.2 (CC BY 4.0) for Consulting. Each entry tracks `source`, `sourceRef`, and `role` (anchor/variant).
+- **Standard clause DB:** `src/data/standards.json` — 68 pre-embedded templates (16 NDA + 29 SaaS + 23 Consulting). Regenerate with `DOTENV_CONFIG_PATH=.env.local npx tsx -r dotenv/config scripts/seed-standards.ts`
 - **Contract type selection:** User selects NDA or SaaS before uploading. Standards are filtered by selected type during comparison.
 - **Scoring:** LLM (Gemini 2.5 Pro) judges each clause as green/yellow/red based on functional equivalence to the matched standard. Embedding similarity thresholds (0.82/0.65) are fallback only. Rule tiers can override LLM scores.
 - **API keys:** `.env.local` — OPENAI_API_KEY (embeddings), GEMINI_API_KEY (LLM scoring + explanations)

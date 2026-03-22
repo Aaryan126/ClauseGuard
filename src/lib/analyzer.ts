@@ -12,6 +12,7 @@ import { AnalysisReport, ClauseAnalysis, ContractType } from "@/types";
 const CONTRACT_TYPE_LABELS: Record<ContractType, string> = {
   nda: "Non-Disclosure Agreement (NDA)",
   saas: "SaaS Agreement",
+  consulting: "Consulting / Professional Services Agreement",
 };
 
 // Analyze from pre-extracted text (used for PDFs where client extracts text via pdfjs)
