@@ -106,7 +106,8 @@ ${ruleBlock}
 Respond in this exact JSON format:
 {
   "explanation": "2-3 sentences. What does this clause actually do, and what is the specific risk to the person signing? Reference the actual language in the clause. Do not be vague.",
-  "normalVersion": "1-2 sentences. What would a fair, standard version of this clause say instead? Be specific about what would change (e.g., duration, scope, mutual vs one-sided). If you cannot identify a meaningful improvement, respond with null."
+  "normalVersion": "1-2 sentences. What would a fair, standard version of this clause say instead? Be specific about what would change (e.g., duration, scope, mutual vs one-sided). If you cannot identify a meaningful improvement, respond with null.",
+  "suggestedAction": "One concrete sentence telling the signer what to do. Examples: 'Request a mutual termination right instead of one-sided.' or 'Ask to cap the non-compete at 12 months and limit to your geographic area.' or 'This is standard — no action needed.' Be specific and actionable."
 }
 
 Rules:
@@ -115,6 +116,7 @@ Rules:
 - If a pattern was detected, explain what that specific pattern means practically.
 - Avoid generic statements like "this is fairly standard" or "consult a lawyer."
 - If the normalVersion would be essentially the same as the uploaded clause, set normalVersion to null.
+- The suggestedAction must be a concrete negotiation point or confirmation that no action is needed. Never say "consult a lawyer" as the action.
 - Respond ONLY with the JSON object, no markdown or extra text.`;
 }
 
@@ -134,8 +136,8 @@ async function explainSingle(
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       analysis.explanation = parsed.explanation || undefined;
-      // Respect null normalVersion — don't show "What Standard Looks Like" if LLM says it's fine
       analysis.normalVersion = parsed.normalVersion || undefined;
+      analysis.suggestedAction = parsed.suggestedAction || undefined;
     }
   } catch (error) {
     console.error(`Failed to explain clause: ${analysis.clause.title}`, error);

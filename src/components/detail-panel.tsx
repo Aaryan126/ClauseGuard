@@ -127,12 +127,12 @@ function ExpandedDetail({
   onToggleText?: () => void;
 }) {
   const [refOpen, setRefOpen] = useState(false);
-  const { bestMatch, ruleHits, severity, flagSource, explanation, normalVersion } = analysis;
+  const { bestMatch, ruleHits, severity, flagSource, explanation, normalVersion, suggestedAction } = analysis;
 
   return (
     <div className={`border-t ${config.border} ${config.bg} px-4 pb-5 pt-3 space-y-5`}>
-      {/* Closest standard match */}
-      {bestMatch && (
+      {/* Closest standard match — only show if similarity is meaningful */}
+      {bestMatch && bestMatch.similarity >= 0.65 && (
         <p className="text-[11px] text-gray-400">
           Compared against: <span className="text-gray-500 font-medium">{bestMatch.standardClause.clauseName}</span>
         </p>
@@ -203,8 +203,20 @@ function ExpandedDetail({
         </section>
       )}
 
-      {/* Reference — collapsible */}
-      {bestMatch && (
+      {/* Suggested action */}
+      {suggestedAction && (
+        <section>
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-blue-900 dark:text-blue-400 mb-1.5">
+            Suggested Action
+          </h4>
+          <div className="rounded-md border-2 border-blue-900/20 bg-blue-950/5 dark:border-blue-400/20 dark:bg-blue-900/10 p-3">
+            <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 leading-[1.6]">{suggestedAction}</p>
+          </div>
+        </section>
+      )}
+
+      {/* Reference — collapsible, only if match is meaningful */}
+      {bestMatch && bestMatch.similarity >= 0.65 && (
         <section className="border-t border-gray-200/60 pt-3">
           <button
             onClick={(e) => { e.stopPropagation(); setRefOpen(!refOpen); }}

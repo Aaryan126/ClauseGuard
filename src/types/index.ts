@@ -50,6 +50,7 @@ export interface ClauseAnalysis {
   flagSource: FlagSource;
   explanation?: string;
   normalVersion?: string;
+  suggestedAction?: string;
 }
 
 export interface AnalysisReport {

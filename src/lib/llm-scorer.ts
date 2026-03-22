@@ -55,24 +55,20 @@ async function scoreSingle(
   bestMatch: StandardClause | null,
   similarity: number
 ): Promise<LLMScoreResult> {
-  if (!bestMatch) {
-    // No standard match at all — novel clause
-    return {
-      severity: "red",
-      reasoning: "No matching standard clause found. This clause appears novel or highly unusual.",
-    };
-  }
+  const matchBlock = bestMatch
+    ? `CLOSEST STANDARD CLAUSE: "${bestMatch.clauseName}"
+STANDARD TEXT:
+"${bestMatch.standardText.slice(0, 3000)}"
 
-  const prompt = `You are a legal contract analyst. Your task is to judge whether an uploaded contract clause is functionally equivalent to an industry-standard clause.
+EMBEDDING SIMILARITY: ${(similarity * 100).toFixed(1)}% (this is a rough semantic similarity score — use it as context but make your own judgment)`
+    : "NO MATCHING STANDARD CLAUSE was found in our database. This does NOT automatically mean the clause is risky — it may be a standard legal provision (e.g., statutory notice, definitions, compliance clause) that simply isn't in our comparison set.";
+
+  const prompt = `You are a legal contract analyst. Your task is to judge an uploaded contract clause.
 
 UPLOADED CLAUSE:
 "${clause.text.slice(0, 3000)}"
 
-CLOSEST STANDARD CLAUSE: "${bestMatch.clauseName}"
-STANDARD TEXT:
-"${bestMatch.standardText.slice(0, 3000)}"
-
-EMBEDDING SIMILARITY: ${(similarity * 100).toFixed(1)}% (this is a rough semantic similarity score — use it as context but make your own judgment)
+${matchBlock}
 
 FIRST: Determine if the uploaded text is actually a substantive legal clause. The following should be classified as "skip":
 - Signature blocks (name/date/signature lines)
@@ -81,7 +77,9 @@ FIRST: Determine if the uploaded text is actually a substantive legal clause. Th
 - Title pages or contract identification sections
 - Definitions-only sections that merely label parties (e.g., "Disclosing Party", "Receiving Party") without creating obligations
 
-If it IS a substantive clause, judge it against the standard on these criteria:
+SECOND: If the closest standard match seems UNRELATED to the uploaded clause (e.g., comparing a statutory notice against a confidentiality definition), judge the clause ON ITS OWN MERITS rather than against the irrelevant match. A clause that doesn't match any standard but is itself a normal, common, or legally-required provision should be classified as "green".
+
+If it IS a substantive clause, judge it on these criteria:
 1. Does it achieve the SAME LEGAL EFFECT as the standard?
 2. Are there any MISSING PROTECTIONS that the standard includes but this clause omits?
 3. Are there any ADDITIONAL OBLIGATIONS or restrictions beyond what the standard requires?
