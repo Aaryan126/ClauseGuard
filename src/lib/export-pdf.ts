@@ -91,46 +91,26 @@ export async function exportAnalysisPdf(report: AnalysisReport, fileName: string
   doc.text(`Clauses analyzed: ${report.totalClauses}`, MARGIN, y);
   y += 12;
 
-  // Risk score box
-  const riskColor =
-    report.overallRiskScore <= 20
-      ? COLORS.green
-      : report.overallRiskScore <= 50
-        ? COLORS.yellow
-        : COLORS.red;
-  const riskLabel =
-    report.overallRiskScore <= 20
-      ? "Low Risk"
-      : report.overallRiskScore <= 50
-        ? "Moderate Risk"
-        : "High Risk";
-
+  // Clause summary box
   doc.setFillColor(248, 248, 248);
-  doc.roundedRect(MARGIN, y, CONTENT_W, 22, 2, 2, "F");
+  doc.roundedRect(MARGIN, y, CONTENT_W, 12, 2, 2, "F");
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(riskColor.r, riskColor.g, riskColor.b);
-  doc.text(`${report.overallRiskScore}/100`, MARGIN + 6, y + 9);
-  doc.setFontSize(FONT_BODY);
-  doc.text(riskLabel, MARGIN + 6, y + 15);
-
-  // Severity counts on the right
-  const countsX = MARGIN + CONTENT_W - 60;
   doc.setFontSize(FONT_SMALL);
   const counts = [
     { label: "Standard", count: report.summary.green, severity: "green" as Severity },
     { label: "Needs Review", count: report.summary.yellow, severity: "yellow" as Severity },
     { label: "High Risk", count: report.summary.red, severity: "red" as Severity },
   ];
-  counts.forEach((item, i) => {
-    const iy = y + 6 + i * 5.5;
-    drawSeverityDot(countsX, iy - 0.5, item.severity);
+  let cx = MARGIN + 6;
+  counts.forEach((item) => {
+    drawSeverityDot(cx, y + 6, item.severity);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
-    doc.text(`${item.label}: ${item.count}`, countsX + 4, iy);
+    const text = `${item.label}: ${item.count}`;
+    doc.text(text, cx + 3, y + 7);
+    cx += doc.getTextWidth(text) + 12;
   });
-  y += 28;
+  y += 18;
 
   // Legend
   doc.setFontSize(FONT_LABEL);
@@ -239,14 +219,13 @@ export async function exportAnalysisPdf(report: AnalysisReport, fileName: string
     }
     y += 3;
 
-    // Similarity info
+    // Closest standard match
     if (analysis.bestMatch) {
       ensureSpace(8);
       doc.setFontSize(FONT_LABEL);
       doc.setTextColor(140, 140, 140);
-      const simPct = (analysis.bestMatch.similarity * 100).toFixed(1);
       doc.text(
-        `${simPct}% match to: ${analysis.bestMatch.standardClause.clauseName}`,
+        `Compared against: ${analysis.bestMatch.standardClause.clauseName}`,
         MARGIN + 4,
         y
       );

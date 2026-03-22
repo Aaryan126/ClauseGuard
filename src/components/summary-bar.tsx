@@ -11,48 +11,20 @@ interface SummaryBarProps {
   onExportPdf: () => void;
 }
 
-export function SummaryBar({ report, fileName, onNewAnalysis, onExportPdf }: SummaryBarProps) {
-  const { summary, overallRiskScore, contractType, totalClauses } = report;
-
-  const riskLabel =
-    overallRiskScore <= 20
-      ? "Low Risk"
-      : overallRiskScore <= 50
-        ? "Moderate Risk"
-        : "High Risk";
-
-  const riskBarBg =
-    overallRiskScore <= 20
-      ? "bg-emerald-500"
-      : overallRiskScore <= 50
-        ? "bg-amber-500"
-        : "bg-red-500";
+export function SummaryBar({ report, onExportPdf }: SummaryBarProps) {
+  const { summary, contractType, totalClauses } = report;
 
   return (
-    <div className="bg-white dark:bg-gray-950 border-b-2 border-blue-900/10 dark:border-blue-400/10 px-5 py-4">
-      <div className="flex items-center gap-8 flex-wrap">
-        {/* Risk score */}
-        <div className="flex items-center gap-3">
-          <span className="text-3xl font-extrabold tabular-nums tracking-tight text-blue-900 dark:text-blue-300">
-            {overallRiskScore}
-          </span>
-          <div>
-            <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-200 leading-tight">{riskLabel}</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">{contractType}</p>
-          </div>
-        </div>
+    <div className="bg-white dark:bg-gray-950 border-b-2 border-blue-900/10 dark:border-blue-400/10 px-5 py-3.5">
+      <div className="flex items-center gap-6 flex-wrap">
+        {/* Contract type */}
+        <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-200">
+          {contractType}
+        </span>
 
-        {/* Risk bar */}
-        <div className="flex-1 min-w-[100px] max-w-[180px]">
-          <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
-            <div
-              className={`h-2 rounded-full transition-all ${riskBarBg}`}
-              style={{ width: `${Math.min(overallRiskScore, 100)}%` }}
-            />
-          </div>
-        </div>
+        <span className="text-gray-200 dark:text-gray-700">|</span>
 
-        {/* Breakdown */}
+        {/* Clause breakdown */}
         <div className="flex items-center gap-4 text-[13px]">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />

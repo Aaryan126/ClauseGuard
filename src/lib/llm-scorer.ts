@@ -3,8 +3,10 @@ import { Severity, StandardClause, ExtractedClause } from "@/types";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+export type LLMSeverity = Severity | "skip";
+
 export interface LLMScoreResult {
-  severity: Severity;
+  severity: LLMSeverity;
   reasoning: string;
 }
 
@@ -72,20 +74,28 @@ STANDARD TEXT:
 
 EMBEDDING SIMILARITY: ${(similarity * 100).toFixed(1)}% (this is a rough semantic similarity score — use it as context but make your own judgment)
 
-Judge the uploaded clause against the standard on these criteria:
+FIRST: Determine if the uploaded text is actually a substantive legal clause. The following should be classified as "skip":
+- Signature blocks (name/date/signature lines)
+- Page numbers, headers, footers, copyright notices
+- Preambles and recitals (introductory text that identifies the parties, states the date, and describes the general purpose — these are not substantive obligations)
+- Title pages or contract identification sections
+- Definitions-only sections that merely label parties (e.g., "Disclosing Party", "Receiving Party") without creating obligations
+
+If it IS a substantive clause, judge it against the standard on these criteria:
 1. Does it achieve the SAME LEGAL EFFECT as the standard?
 2. Are there any MISSING PROTECTIONS that the standard includes but this clause omits?
 3. Are there any ADDITIONAL OBLIGATIONS or restrictions beyond what the standard requires?
 4. Is the SCOPE broader or narrower than standard (duration, geography, parties affected)?
 
-Based on your analysis, classify the clause as one of:
+Classify the clause as one of:
+- "skip" — Not a substantive legal clause (signature block, header, footer, page number, copyright notice, formatting).
 - "green" — Functionally equivalent to standard. Minor wording differences are fine. No meaningful risk difference.
 - "yellow" — Partially equivalent but has notable deviations. Missing a protection, broader scope, or additional obligation that the signer should review.
 - "red" — Significantly different from standard. Missing critical protections, imposes unusual obligations, or contains terms that could be harmful.
 
 Respond ONLY with this JSON:
 {
-  "severity": "green" | "yellow" | "red",
+  "severity": "skip" | "green" | "yellow" | "red",
   "reasoning": "One sentence explaining your judgment."
 }`;
 
@@ -97,7 +107,7 @@ Respond ONLY with this JSON:
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       const sev = parsed.severity;
-      if (sev === "green" || sev === "yellow" || sev === "red") {
+      if (sev === "skip" || sev === "green" || sev === "yellow" || sev === "red") {
         return { severity: sev, reasoning: parsed.reasoning || "" };
       }
     }

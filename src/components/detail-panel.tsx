@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { ClauseAnalysis, Severity } from "@/types";
 
 interface DetailPanelProps {
@@ -12,7 +12,7 @@ interface DetailPanelProps {
 
 const severityConfig: Record<
   Severity,
-  { label: string; accent: string; bg: string; bgHover: string; border: string; dot: string; barBg: string }
+  { label: string; accent: string; bg: string; bgHover: string; border: string; dot: string }
 > = {
   green: {
     label: "Standard",
@@ -21,7 +21,6 @@ const severityConfig: Record<
     bgHover: "hover:bg-gray-50",
     border: "border-emerald-200",
     dot: "bg-emerald-500",
-    barBg: "bg-emerald-500",
   },
   yellow: {
     label: "Needs Review",
@@ -30,7 +29,6 @@ const severityConfig: Record<
     bgHover: "hover:bg-gray-50",
     border: "border-amber-200",
     dot: "bg-amber-500",
-    barBg: "bg-amber-400",
   },
   red: {
     label: "High Risk",
@@ -39,17 +37,11 @@ const severityConfig: Record<
     bgHover: "hover:bg-gray-50",
     border: "border-red-200",
     dot: "bg-red-500",
-    barBg: "bg-red-500",
   },
 };
 
 export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPanelProps) {
-  const [textExpanded, setTextExpanded] = useState(false);
   const selectedRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setTextExpanded(false);
-  }, [selectedIndex]);
 
   useEffect(() => {
     if (selectedRef.current) {
@@ -99,11 +91,6 @@ export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPan
                         · {analysis.flagSource === "similarity" ? "by similarity" : analysis.flagSource === "pattern" ? "by pattern" : "by both"}
                       </span>
                     )}
-                    {analysis.bestMatch && (
-                      <span className="text-gray-400 ml-1.5">
-                        · {(analysis.bestMatch.similarity * 100).toFixed(0)}% match
-                      </span>
-                    )}
                   </p>
                 </div>
                 <ChevronDown
@@ -118,8 +105,6 @@ export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPan
                 <ExpandedDetail
                   analysis={analysis}
                   config={config}
-                  textExpanded={textExpanded}
-                  onToggleText={() => setTextExpanded(!textExpanded)}
                 />
               )}
             </div>
@@ -135,71 +120,22 @@ export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPan
 function ExpandedDetail({
   analysis,
   config,
-  textExpanded,
-  onToggleText,
 }: {
   analysis: ClauseAnalysis;
   config: (typeof severityConfig)[Severity];
-  textExpanded: boolean;
-  onToggleText: () => void;
+  textExpanded?: boolean;
+  onToggleText?: () => void;
 }) {
-  const { clause, bestMatch, ruleHits, severity, flagSource, explanation, normalVersion } = analysis;
-  const similarityPct = bestMatch ? (bestMatch.similarity * 100).toFixed(1) : null;
+  const [refOpen, setRefOpen] = useState(false);
+  const { bestMatch, ruleHits, severity, flagSource, explanation, normalVersion } = analysis;
 
   return (
     <div className={`border-t ${config.border} ${config.bg} px-4 pb-5 pt-3 space-y-5`}>
-      {/* Clause text */}
-      <section>
-        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
-          Contract Text
-        </h4>
-        <div className="rounded-md border border-gray-200 bg-white">
-          <div
-            className={`text-[12.5px] text-gray-600 leading-[1.7] p-3 whitespace-pre-wrap ${
-              textExpanded ? "" : "max-h-[100px] overflow-hidden"
-            }`}
-          >
-            {clause.text}
-          </div>
-          {clause.text.length > 200 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleText();
-              }}
-              className="w-full flex items-center justify-center gap-1 py-1.5 text-[11px] font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-t border-gray-200 transition-colors cursor-pointer"
-            >
-              {textExpanded ? (
-                <><ChevronUp className="w-3 h-3" /> Show less</>
-              ) : (
-                <><ChevronDown className="w-3 h-3" /> Show full clause</>
-              )}
-            </button>
-          )}
-        </div>
-      </section>
-
-      {/* Similarity */}
-      {bestMatch && similarityPct && (
-        <section>
-          <div className="flex items-baseline justify-between mb-1.5">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-              Similarity to Standard
-            </h4>
-            <span className="text-[15px] font-bold tabular-nums text-gray-900">
-              {similarityPct}%
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
-            <div
-              className={`h-1.5 rounded-full transition-all duration-500 ${config.barBg}`}
-              style={{ width: `${Math.max(bestMatch.similarity * 100, 4)}%` }}
-            />
-          </div>
-          <p className="text-[11px] text-gray-400 mt-1">
-            Closest match: <span className="text-gray-500">{bestMatch.standardClause.clauseName}</span>
-          </p>
-        </section>
+      {/* Closest standard match */}
+      {bestMatch && (
+        <p className="text-[11px] text-gray-400">
+          Compared against: <span className="text-gray-500 font-medium">{bestMatch.standardClause.clauseName}</span>
+        </p>
       )}
 
       {/* Flagged patterns */}
@@ -267,27 +203,37 @@ function ExpandedDetail({
         </section>
       )}
 
-      {/* Reference */}
+      {/* Reference — collapsible */}
       {bestMatch && (
-        <section className="border-t border-gray-200/60 pt-4">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
-            Reference Standard
-          </h4>
-          <p className="text-[13px] font-semibold text-gray-800">{bestMatch.standardClause.clauseName}</p>
-          {bestMatch.standardClause.sourceRef && (
-            <p className="text-[11px] text-gray-400 mt-0.5">{bestMatch.standardClause.sourceRef}</p>
-          )}
-          <p className="text-[12px] text-gray-500 leading-relaxed mt-1.5">
-            {bestMatch.standardClause.summary}
-          </p>
-          {bestMatch.standardClause.normalRange?.description && (
-            <div className="mt-2.5 pt-2.5 border-t border-gray-200/50">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">
-                Acceptable Range
+        <section className="border-t border-gray-200/60 pt-3">
+          <button
+            onClick={(e) => { e.stopPropagation(); setRefOpen(!refOpen); }}
+            className="w-full flex items-center justify-between cursor-pointer group"
+          >
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-500 transition-colors">
+              Reference Standard
+            </h4>
+            <ChevronDown className={`w-3.5 h-3.5 text-gray-300 transition-transform duration-200 ${refOpen ? "rotate-180" : ""}`} />
+          </button>
+          {refOpen && (
+            <div className="mt-2.5">
+              <p className="text-[13px] font-semibold text-gray-800">{bestMatch.standardClause.clauseName}</p>
+              {bestMatch.standardClause.sourceRef && (
+                <p className="text-[11px] text-gray-400 mt-0.5">{bestMatch.standardClause.sourceRef}</p>
+              )}
+              <p className="text-[12px] text-gray-500 leading-relaxed mt-1.5">
+                {bestMatch.standardClause.summary}
               </p>
-              <p className="text-[12px] text-gray-500 leading-relaxed">
-                {bestMatch.standardClause.normalRange.description}
-              </p>
+              {bestMatch.standardClause.normalRange?.description && (
+                <div className="mt-2.5 pt-2.5 border-t border-gray-200/50">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">
+                    Acceptable Range
+                  </p>
+                  <p className="text-[12px] text-gray-500 leading-relaxed">
+                    {bestMatch.standardClause.normalRange.description}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </section>

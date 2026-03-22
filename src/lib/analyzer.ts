@@ -55,31 +55,42 @@ async function runAnalysisPipeline(
   const bestMatchStandards = matchResults.map((m) => m?.standardClause ?? null);
   const similarities = matchResults.map((m) => m?.similarity ?? 0);
 
+  // Debug: log similarity scores for each clause
+  clauses.forEach((c, i) => {
+    const matchName = bestMatchStandards[i]?.clauseName ?? "none";
+    console.log(`[ClauseGuard] Clause "${c.title}" → ${(similarities[i] * 100).toFixed(1)}% similar to "${matchName}"`);
+  });
+
   // Step 4: LLM-based severity scoring (replaces rigid cosine thresholds)
   const llmScores = await scoreClausesWithLLM(clauses, bestMatchStandards, similarities);
 
   // Step 5: Run pattern rules on each clause
   const allRuleHits = clauses.map((clause) => checkAggressivePatterns(clause.text));
 
-  // Step 6: Combine LLM severity + rule hits using tier system
-  const analyses: ClauseAnalysis[] = clauses.map((clause, i) => {
+  // Step 6: Combine LLM severity + rule hits, filtering out non-clauses
+  const analyses: ClauseAnalysis[] = [];
+  for (let i = 0; i < clauses.length; i++) {
+    const llmScore = llmScores[i];
+
+    // LLM identified this as a signature block, header, or other non-clause — skip it
+    if (llmScore.severity === "skip") continue;
+
     const similarity = similarities[i];
     const bestMatch = matchResults[i];
-    const llmScore = llmScores[i];
     const ruleHits = allRuleHits[i];
 
     const { severity, flagSource } = combineSeverity(llmScore.severity, ruleHits);
 
-    return {
-      clause,
+    analyses.push({
+      clause: clauses[i],
       bestMatch: bestMatch && similarity >= THRESHOLDS.novel
         ? { standardClause: bestMatch.standardClause, similarity }
         : null,
       ruleHits,
       severity,
       flagSource,
-    };
-  });
+    });
+  }
 
   // Step 7: Get LLM explanations for flagged clauses only
   await explainFlaggedClauses(analyses);
@@ -94,7 +105,7 @@ async function runAnalysisPipeline(
 
   return {
     contractType: CONTRACT_TYPE_LABELS[contractType],
-    totalClauses: clauses.length,
+    totalClauses: analyses.length,
     summary,
     overallRiskScore: calculateOverallRiskScore(severities),
     clauses: analyses,

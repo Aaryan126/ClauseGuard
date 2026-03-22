@@ -9,10 +9,10 @@ interface HistoryDropdownProps {
   onSelect: (entry: HistoryEntry) => void;
 }
 
-const riskDot = (score: number) => {
-  if (score <= 20) return "bg-emerald-500";
-  if (score <= 50) return "bg-amber-500";
-  return "bg-red-500";
+const worstDot = (summary: { green: number; yellow: number; red: number }) => {
+  if (summary.red > 0) return "bg-red-500";
+  if (summary.yellow > 0) return "bg-amber-500";
+  return "bg-emerald-500";
 };
 
 type ListEntry = Omit<HistoryEntry, "fileBlob">;
@@ -96,7 +96,7 @@ export function HistoryDropdown({ onSelect }: HistoryDropdownProps) {
                   className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer group border-b border-gray-50 dark:border-gray-900 last:border-b-0 disabled:opacity-50"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${riskDot(entry.report.overallRiskScore)}`} />
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${worstDot(entry.report.summary)}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate">
                         {entry.fileName}
