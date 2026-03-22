@@ -27,10 +27,15 @@ export interface ExtractedClause {
 
 export type Severity = "green" | "yellow" | "red";
 
+export type RuleTier = "critical" | "serious" | "caution";
+
+export type FlagSource = "similarity" | "pattern" | "both" | null;
+
 export interface RuleHit {
   ruleId: string;
   ruleName: string;
   severity: Severity;
+  tier: RuleTier;
   details: string;
 }
 
@@ -42,6 +47,7 @@ export interface ClauseAnalysis {
   } | null;
   ruleHits: RuleHit[];
   severity: Severity;
+  flagSource: FlagSource;
   explanation?: string;
   normalVersion?: string;
 }

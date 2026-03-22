@@ -1,11 +1,10 @@
-import { Severity, RuleHit } from "@/types";
+import { Severity, RuleHit, FlagSource } from "@/types";
 
-// Configurable thresholds
+// Embedding thresholds — used as fallback when LLM scoring is unavailable
 export const THRESHOLDS = {
-  green: 0.82,    // similarity >= 0.82 → green
-  yellow: 0.65,   // similarity >= 0.65 → yellow
-  // below 0.65 → red
-  novel: 0.50,    // below 0.50 → no standard match found
+  green: 0.82,
+  yellow: 0.65,
+  novel: 0.50,
 };
 
 export function getSeverityFromSimilarity(similarity: number): Severity {
@@ -14,25 +13,59 @@ export function getSeverityFromSimilarity(similarity: number): Severity {
   return "red";
 }
 
+/**
+ * Combines LLM-judged severity with rule-engine hits using the tier system.
+ *
+ * The LLM severity is the primary signal (replaces rigid cosine thresholds).
+ * Rule tiers can still override:
+ *
+ *   LLM Score  | No rules | Caution  | Serious  | Critical
+ *   GREEN      | GREEN    | GREEN    | YELLOW   | RED
+ *   YELLOW     | YELLOW   | YELLOW   | RED      | RED
+ *   RED        | RED      | RED      | RED      | RED
+ */
 export function combineSeverity(
-  embeddingSeverity: Severity,
-  ruleHits: RuleHit[]
-): Severity {
-  const severityOrder: Record<Severity, number> = {
-    green: 0,
-    yellow: 1,
-    red: 2,
-  };
+  llmSeverity: Severity,
+  ruleHits: RuleHit[],
+): { severity: Severity; flagSource: FlagSource } {
+  const hasCritical = ruleHits.some((h) => h.tier === "critical");
+  const hasSerious = ruleHits.some((h) => h.tier === "serious");
+  const hasAnyRule = ruleHits.length > 0;
 
-  let worst = severityOrder[embeddingSeverity];
+  let severity: Severity;
 
-  for (const hit of ruleHits) {
-    const hitLevel = severityOrder[hit.severity];
-    if (hitLevel > worst) worst = hitLevel;
+  if (llmSeverity === "red") {
+    severity = "red";
+  } else if (llmSeverity === "yellow") {
+    severity = hasCritical || hasSerious ? "red" : "yellow";
+  } else {
+    // LLM says green
+    if (hasCritical) {
+      severity = "red";
+    } else if (hasSerious) {
+      severity = "yellow";
+    } else {
+      severity = "green";
+    }
   }
 
-  const reverseMap: Severity[] = ["green", "yellow", "red"];
-  return reverseMap[worst];
+  // Determine what drove the flag
+  let flagSource: FlagSource;
+  const llmFlagged = llmSeverity !== "green";
+  const ruleContributed =
+    hasAnyRule && (hasCritical || hasSerious || llmSeverity !== "green");
+
+  if (severity === "green") {
+    flagSource = null;
+  } else if (llmFlagged && ruleContributed) {
+    flagSource = "both";
+  } else if (ruleContributed) {
+    flagSource = "pattern";
+  } else {
+    flagSource = "similarity";
+  }
+
+  return { severity, flagSource };
 }
 
 export function calculateOverallRiskScore(

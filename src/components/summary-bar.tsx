@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, ArrowLeft, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnalysisReport } from "@/types";
 
@@ -14,20 +14,6 @@ interface SummaryBarProps {
 export function SummaryBar({ report, fileName, onNewAnalysis, onExportPdf }: SummaryBarProps) {
   const { summary, overallRiskScore, contractType, totalClauses } = report;
 
-  const riskColor =
-    overallRiskScore <= 20
-      ? "text-emerald-600"
-      : overallRiskScore <= 50
-        ? "text-amber-500"
-        : "text-red-500";
-
-  const riskBgBar =
-    overallRiskScore <= 20
-      ? "bg-emerald-500"
-      : overallRiskScore <= 50
-        ? "bg-amber-400"
-        : "bg-red-500";
-
   const riskLabel =
     overallRiskScore <= 20
       ? "Low Risk"
@@ -35,53 +21,59 @@ export function SummaryBar({ report, fileName, onNewAnalysis, onExportPdf }: Sum
         ? "Moderate Risk"
         : "High Risk";
 
+  const riskBarBg =
+    overallRiskScore <= 20
+      ? "bg-emerald-500"
+      : overallRiskScore <= 50
+        ? "bg-amber-500"
+        : "bg-red-500";
+
   return (
-    <div className="bg-white dark:bg-gray-950 border-b px-4 py-4">
-      <div className="flex items-center gap-6 flex-wrap">
+    <div className="bg-white dark:bg-gray-950 border-b-2 border-blue-900/10 dark:border-blue-400/10 px-5 py-4">
+      <div className="flex items-center gap-8 flex-wrap">
         {/* Risk score */}
-        <div className="flex items-center gap-2">
-          <Shield className={`w-5 h-5 ${riskColor}`} />
-          <div className="flex items-center gap-2">
-            <span className={`text-2xl font-bold ${riskColor}`}>{overallRiskScore}</span>
-            <div>
-              <p className={`text-sm font-semibold leading-tight ${riskColor}`}>{riskLabel}</p>
-              <p className="text-[10px] text-gray-400">{contractType}</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <span className="text-3xl font-extrabold tabular-nums tracking-tight text-blue-900 dark:text-blue-300">
+            {overallRiskScore}
+          </span>
+          <div>
+            <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-200 leading-tight">{riskLabel}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{contractType}</p>
           </div>
         </div>
 
         {/* Risk bar */}
-        <div className="flex-1 min-w-[120px] max-w-[200px]">
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div className="flex-1 min-w-[100px] max-w-[180px]">
+          <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2">
             <div
-              className={`h-2.5 rounded-full transition-all ${riskBgBar}`}
+              className={`h-2 rounded-full transition-all ${riskBarBg}`}
               style={{ width: `${Math.min(overallRiskScore, 100)}%` }}
             />
           </div>
         </div>
 
-        {/* Breakdown counts */}
-        <div className="flex items-center gap-3 text-sm">
+        {/* Breakdown */}
+        <div className="flex items-center gap-4 text-[13px]">
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="font-bold text-emerald-600">{summary.green}</span>
-            <span className="text-xs text-gray-400">ok</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="font-bold text-gray-800 dark:text-gray-200">{summary.green}</span>
+            <span className="text-gray-400 text-[11px]">ok</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-            <span className="font-bold text-amber-500">{summary.yellow}</span>
-            <span className="text-xs text-gray-400">review</span>
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="font-bold text-gray-800 dark:text-gray-200">{summary.yellow}</span>
+            <span className="text-gray-400 text-[11px]">review</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span className="font-bold text-red-600">{summary.red}</span>
-            <span className="text-xs text-gray-400">risk</span>
+            <span className="w-2 h-2 rounded-full bg-red-500" />
+            <span className="font-bold text-gray-800 dark:text-gray-200">{summary.red}</span>
+            <span className="text-gray-400 text-[11px]">risk</span>
           </div>
         </div>
 
-        <span className="text-xs text-gray-400">{totalClauses} clauses</span>
+        <span className="text-[11px] text-gray-400">{totalClauses} clauses</span>
 
-        {/* Export — pushed to the right */}
+        {/* Export */}
         <div className="ml-auto">
           <Button variant="outline" size="sm" onClick={onExportPdf}>
             <Download className="w-4 h-4 mr-1" />
@@ -89,7 +81,6 @@ export function SummaryBar({ report, fileName, onNewAnalysis, onExportPdf }: Sum
           </Button>
         </div>
       </div>
-
     </div>
   );
 }

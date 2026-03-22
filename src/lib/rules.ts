@@ -1,10 +1,11 @@
-import { RuleHit, Severity } from "@/types";
+import { RuleHit, Severity, RuleTier } from "@/types";
 
 interface AggressivePattern {
   id: string;
   name: string;
   category: string;
   severity: Severity;
+  tier: RuleTier;
   detect: (text: string) => { matched: boolean; details: string };
 }
 
@@ -15,6 +16,7 @@ const patterns: AggressivePattern[] = [
     name: "Excessive Non-Compete Duration",
     category: "Non-Compete",
     severity: "red",
+    tier: "serious",
     detect: (text) => {
       const lower = text.toLowerCase();
       if (!lower.includes("non-compete") && !lower.includes("noncompete") && !lower.includes("non compete") && !lower.includes("covenant not to compete")) {
@@ -36,6 +38,7 @@ const patterns: AggressivePattern[] = [
     name: "Worldwide Non-Compete Scope",
     category: "Non-Compete",
     severity: "red",
+    tier: "serious",
     detect: (text) => {
       const lower = text.toLowerCase();
       const hasNonCompete = lower.includes("non-compete") || lower.includes("noncompete") || lower.includes("covenant not to compete");
@@ -51,6 +54,7 @@ const patterns: AggressivePattern[] = [
     name: "Unlimited Liability",
     category: "Liability",
     severity: "red",
+    tier: "critical",
     detect: (text) => {
       const lower = text.toLowerCase();
       if (lower.includes("unlimited liability") || lower.includes("no limit on liability") || lower.includes("without limitation as to amount")) {
@@ -64,6 +68,7 @@ const patterns: AggressivePattern[] = [
     name: "Unilateral Termination Without Cause",
     category: "Termination",
     severity: "red",
+    tier: "serious",
     detect: (text) => {
       const lower = text.toLowerCase();
       const hasTermination = lower.includes("terminat");
@@ -80,6 +85,7 @@ const patterns: AggressivePattern[] = [
     name: "Blanket IP Assignment Including Pre-Existing IP",
     category: "IP Assignment",
     severity: "red",
+    tier: "critical",
     detect: (text) => {
       const lower = text.toLowerCase();
       const hasIPAssignment = lower.includes("assign") && (lower.includes("intellectual property") || lower.includes("work product") || lower.includes("inventions"));
@@ -95,6 +101,7 @@ const patterns: AggressivePattern[] = [
     name: "Unilateral Amendment Rights",
     category: "General",
     severity: "red",
+    tier: "critical",
     detect: (text) => {
       const lower = text.toLowerCase();
       const hasAmend = lower.includes("modify") || lower.includes("amend") || lower.includes("change");
@@ -111,6 +118,7 @@ const patterns: AggressivePattern[] = [
     name: "No Carve-Out for Compelled Disclosure",
     category: "Confidentiality",
     severity: "red",
+    tier: "critical",
     detect: (text) => {
       const lower = text.toLowerCase();
       const isConfidentiality = lower.includes("confidential") && (lower.includes("shall not disclose") || lower.includes("not to disclose") || lower.includes("obligation"));
@@ -128,6 +136,7 @@ const patterns: AggressivePattern[] = [
     name: "No Cure Period for Breach",
     category: "Termination",
     severity: "yellow",
+    tier: "caution",
     detect: (text) => {
       const lower = text.toLowerCase();
       const hasBreach = lower.includes("breach") && lower.includes("terminat");
@@ -143,6 +152,7 @@ const patterns: AggressivePattern[] = [
     name: "Auto-Renewal Without Opt-Out Notice",
     category: "Term",
     severity: "yellow",
+    tier: "caution",
     detect: (text) => {
       const lower = text.toLowerCase();
       const hasAutoRenew = lower.includes("automatically renew") || lower.includes("auto-renew") || lower.includes("shall renew");
@@ -158,6 +168,7 @@ const patterns: AggressivePattern[] = [
     name: "Payment Terms Exceed Net 90",
     category: "Payment",
     severity: "yellow",
+    tier: "caution",
     detect: (text) => {
       const lower = text.toLowerCase();
       const netMatch = text.match(/net\s*(\d+)/i);
@@ -174,6 +185,7 @@ const patterns: AggressivePattern[] = [
     name: "Perpetual Confidentiality Obligation",
     category: "Confidentiality",
     severity: "yellow",
+    tier: "caution",
     detect: (text) => {
       const lower = text.toLowerCase();
       const isConfidentiality = lower.includes("confidential");
@@ -189,6 +201,7 @@ const patterns: AggressivePattern[] = [
     name: "Waiver of Jury Trial",
     category: "Dispute Resolution",
     severity: "yellow",
+    tier: "caution",
     detect: (text) => {
       const lower = text.toLowerCase();
       if (lower.includes("waive") && lower.includes("jury trial")) {
@@ -202,6 +215,7 @@ const patterns: AggressivePattern[] = [
     name: "One-Sided Arbitration Venue",
     category: "Dispute Resolution",
     severity: "yellow",
+    tier: "caution",
     detect: (text) => {
       const lower = text.toLowerCase();
       const hasArbitration = lower.includes("arbitration");
@@ -217,6 +231,7 @@ const patterns: AggressivePattern[] = [
     name: "Class Action Waiver",
     category: "Dispute Resolution",
     severity: "yellow",
+    tier: "caution",
     detect: (text) => {
       const lower = text.toLowerCase();
       if (lower.includes("waive") && (lower.includes("class action") || lower.includes("class-action") || lower.includes("collective action"))) {
@@ -230,6 +245,7 @@ const patterns: AggressivePattern[] = [
     name: "Immediate Termination for Convenience",
     category: "Termination",
     severity: "yellow",
+    tier: "caution",
     detect: (text) => {
       const lower = text.toLowerCase();
       const hasConvenience = lower.includes("for convenience") || lower.includes("without cause");
@@ -252,6 +268,7 @@ export function checkAggressivePatterns(clauseText: string): RuleHit[] {
         ruleId: pattern.id,
         ruleName: pattern.name,
         severity: pattern.severity,
+        tier: pattern.tier,
         details: result.details,
       });
     }

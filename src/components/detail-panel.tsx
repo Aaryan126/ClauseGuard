@@ -17,8 +17,8 @@ const severityConfig: Record<
   green: {
     label: "Standard",
     accent: "text-emerald-700",
-    bg: "bg-emerald-50/80",
-    bgHover: "hover:bg-emerald-50",
+    bg: "bg-emerald-50/60",
+    bgHover: "hover:bg-gray-50",
     border: "border-emerald-200",
     dot: "bg-emerald-500",
     barBg: "bg-emerald-500",
@@ -26,8 +26,8 @@ const severityConfig: Record<
   yellow: {
     label: "Needs Review",
     accent: "text-amber-700",
-    bg: "bg-amber-50/80",
-    bgHover: "hover:bg-amber-50",
+    bg: "bg-amber-50/60",
+    bgHover: "hover:bg-gray-50",
     border: "border-amber-200",
     dot: "bg-amber-500",
     barBg: "bg-amber-400",
@@ -35,8 +35,8 @@ const severityConfig: Record<
   red: {
     label: "High Risk",
     accent: "text-red-700",
-    bg: "bg-red-50/80",
-    bgHover: "hover:bg-red-50",
+    bg: "bg-red-50/60",
+    bgHover: "hover:bg-gray-50",
     border: "border-red-200",
     dot: "bg-red-500",
     barBg: "bg-red-500",
@@ -47,12 +47,10 @@ export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPan
   const [textExpanded, setTextExpanded] = useState(false);
   const selectedRef = useRef<HTMLDivElement>(null);
 
-  // Reset text expand when selection changes
   useEffect(() => {
     setTextExpanded(false);
   }, [selectedIndex]);
 
-  // Scroll selected clause into view in the sidebar
   useEffect(() => {
     if (selectedRef.current) {
       selectedRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -69,8 +67,9 @@ export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPan
 
   return (
     <div className="overflow-y-auto h-full">
-      <div className="px-4 py-3 border-b border-gray-200 bg-white sticky top-0 z-10">
-        <h3 className="text-[13px] font-semibold text-gray-800">Clause Analysis</h3>
+      {/* Header */}
+      <div className="px-4 py-3 border-b-2 border-blue-900/10 bg-white sticky top-0 z-10">
+        <h3 className="text-[13px] font-semibold text-blue-900">Clause Analysis</h3>
         <p className="text-[11px] text-gray-400 mt-0.5">{clauses.length} clauses found</p>
       </div>
 
@@ -81,7 +80,7 @@ export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPan
 
           return (
             <div key={index} ref={isSelected ? selectedRef : undefined}>
-              {/* Collapsed row — always visible */}
+              {/* Collapsed row */}
               <button
                 onClick={() => onClauseClick(isSelected ? -1 : index)}
                 className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer ${
@@ -95,6 +94,11 @@ export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPan
                   </p>
                   <p className={`text-[11px] mt-0.5 ${config.accent}`}>
                     {config.label}
+                    {analysis.flagSource && (
+                      <span className="text-gray-400 ml-1.5 font-normal">
+                        · {analysis.flagSource === "similarity" ? "by similarity" : analysis.flagSource === "pattern" ? "by pattern" : "by both"}
+                      </span>
+                    )}
                     {analysis.bestMatch && (
                       <span className="text-gray-400 ml-1.5">
                         · {(analysis.bestMatch.similarity * 100).toFixed(0)}% match
@@ -109,7 +113,7 @@ export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPan
                 />
               </button>
 
-              {/* Expanded detail — only when selected */}
+              {/* Expanded detail */}
               {isSelected && (
                 <ExpandedDetail
                   analysis={analysis}
@@ -139,7 +143,7 @@ function ExpandedDetail({
   textExpanded: boolean;
   onToggleText: () => void;
 }) {
-  const { clause, bestMatch, ruleHits, severity, explanation, normalVersion } = analysis;
+  const { clause, bestMatch, ruleHits, severity, flagSource, explanation, normalVersion } = analysis;
   const similarityPct = bestMatch ? (bestMatch.similarity * 100).toFixed(1) : null;
 
   return (
@@ -182,12 +186,7 @@ function ExpandedDetail({
             <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
               Similarity to Standard
             </h4>
-            <span
-              className="text-base font-bold tabular-nums"
-              style={{
-                color: severity === "green" ? "#059669" : severity === "yellow" ? "#d97706" : "#dc2626",
-              }}
-            >
+            <span className="text-[15px] font-bold tabular-nums text-gray-900">
               {similarityPct}%
             </span>
           </div>
@@ -232,6 +231,20 @@ function ExpandedDetail({
         </section>
       )}
 
+      {/* Flag source */}
+      {flagSource && (
+        <section>
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+            Why This Was Flagged
+          </h4>
+          <p className="text-[12px] text-gray-600 leading-relaxed">
+            {flagSource === "similarity" && "This clause was flagged because its text differs significantly from industry-standard templates."}
+            {flagSource === "pattern" && "This clause was flagged because it matches known aggressive contract patterns, even though its overall structure is close to standard."}
+            {flagSource === "both" && "This clause was flagged both for differing from standard templates and for matching known aggressive patterns."}
+          </p>
+        </section>
+      )}
+
       {/* What this means */}
       {explanation && (
         <section>
@@ -245,10 +258,10 @@ function ExpandedDetail({
       {/* What standard looks like */}
       {normalVersion && (
         <section>
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 mb-1.5">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-blue-900 dark:text-blue-400 mb-1.5">
             What Standard Looks Like
           </h4>
-          <div className="rounded-md border border-emerald-200 bg-emerald-50/50 p-3">
+          <div className="rounded-md border border-blue-900/15 bg-blue-950/5 p-3">
             <p className="text-[13px] text-gray-700 leading-[1.7]">{normalVersion}</p>
           </div>
         </section>

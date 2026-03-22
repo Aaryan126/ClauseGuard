@@ -295,7 +295,7 @@ export async function exportAnalysisPdf(report: AnalysisReport, fileName: string
     analysis: ClauseAnalysis,
     ensureSpace: (n: number) => void
   ) {
-    const { ruleHits, explanation, normalVersion, severity } = analysis;
+    const { ruleHits, explanation, normalVersion, severity, flagSource } = analysis;
     const color = COLORS[severity];
 
     ensureSpace(12);
@@ -309,6 +309,20 @@ export async function exportAnalysisPdf(report: AnalysisReport, fileName: string
     doc.setTextColor(color.r, color.g, color.b);
     doc.text("ANALYSIS", MARGIN + 10, y + 3);
     y += 6;
+
+    // Flag source
+    if (flagSource) {
+      ensureSpace(5);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(FONT_LABEL);
+      doc.setTextColor(140, 140, 140);
+      const sourceText =
+        flagSource === "similarity" ? "Flagged by: low similarity to standard"
+        : flagSource === "pattern" ? "Flagged by: aggressive pattern detected"
+        : "Flagged by: low similarity + aggressive pattern";
+      doc.text(sourceText, MARGIN + 10, y);
+      y += 4;
+    }
 
     // Rule hits
     if (ruleHits.length > 0) {

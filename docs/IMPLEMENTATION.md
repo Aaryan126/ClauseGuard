@@ -36,7 +36,7 @@ It uses a **dual-detection architecture**:
 
 Neither layer alone is sufficient. Embeddings catch *semantic* deviations (the clause says something meaningfully different) while rules catch *specific* dangers (a single word like "unlimited" or "worldwide" changes everything, even if the overall clause structure looks normal).
 
-The LLM (Gemini 2.0 Flash) is used **only for explanations** — it does not participate in scoring or classification. This makes the analysis reproducible: the same clause always gets the same score against the same baseline.
+The LLM (Gemini 2.5 Pro) is used for **scoring** (judging functional equivalence of each clause against its matched standard) and **explanations** (plain-English risk summaries for flagged clauses). Embeddings handle retrieval (finding the closest standard), while the LLM handles judgment.
 
 ### Architecture Diagram
 
@@ -83,7 +83,8 @@ The LLM (Gemini 2.0 Flash) is used **only for explanations** — it does not par
                     └──────┬──────┘
                            │
                     ┌──────▼──────┐
-                    │  EXPLAINER  │  Gemini 2.0 Flash (yellow/red only)
+                    │  LLM SCORER │  Gemini 2.5 Pro (all clauses)
+                    │  EXPLAINER  │  Gemini 2.5 Pro (yellow/red only)
                     │  → plain    │
                     │    English  │
                     └──────┬──────┘
@@ -231,7 +232,7 @@ We batch all clause texts into a single API call (up to 100 per batch) for effic
 
 ### What It Is
 
-A JSON file containing 28 standard clause templates sourced from **authoritative, lawyer-drafted, open-source contract standards**. Each entry includes the clause text, metadata, provenance information, and a pre-computed 1,536-dimension embedding vector.
+A JSON file containing 45 standard clause templates sourced from **authoritative, lawyer-drafted, open-source contract standards**. Each entry includes the clause text, metadata, provenance information, and a pre-computed 1,536-dimension embedding vector.
 
 ### Where the Templates Come From
 
@@ -392,58 +393,78 @@ These two clauses have very similar structure and most of the same words, so the
 | 14 | `class-action-waiver` | Waives class action rights | Keyword match: "waive" + "class action" or "collective action" |
 | 15 | `immediate-termination-convenience` | Can cancel immediately with zero notice | Checks for convenience/without-cause + "immediately" or "effective immediately" |
 
-### How Rules Interact With Embedding Scores
+### Rule Tiers
 
-Rule hits **always escalate** the severity — they never lower it:
+Each rule is assigned a **tier** that determines how it interacts with the embedding-derived severity. This prevents low-confidence pattern matches from overriding high embedding similarity.
 
-```
-Final Severity = worst(Embedding Severity, Worst Rule Hit Severity)
-```
+| Tier | Behavior | Rules |
+|------|----------|-------|
+| **critical** | Always overrides to RED — these are poison-pill clauses regardless of similarity | `unlimited-liability`, `blanket-ip-assignment`, `unilateral-amendment`, `no-compelled-disclosure` |
+| **serious** | Respects embedding confidence — escalates yellow→red, but only escalates green→yellow (not straight to red) | `noncompete-duration`, `noncompete-worldwide`, `unilateral-termination` |
+| **caution** | Never escalates severity on its own — the rule hit is shown to the user but the traffic light stays at the embedding level | All 8 yellow rules |
 
-Examples:
-- Embedding says Green + No rule hits → **Green**
-- Embedding says Green + Yellow rule hit → **Yellow**
-- Embedding says Green + Red rule hit → **Red**
-- Embedding says Yellow + Red rule hit → **Red**
-- Embedding says Red + No rule hits → **Red**
+### How Rules Interact With Embedding Scores (Tier-Based Matrix)
+
+The combination is no longer "worst wins." Instead, the rule tier determines how much it can override the embedding:
+
+| Embedding Severity | No Rules | Caution Rule | Serious Rule | Critical Rule |
+|-------------------|----------|-------------|-------------|---------------|
+| **GREEN** (≥0.82) | GREEN | GREEN (rule shown) | YELLOW | RED |
+| **YELLOW** (≥0.65) | YELLOW | YELLOW | RED | RED |
+| **RED** (<0.65) | RED | RED | RED | RED |
+
+Key behaviors:
+- A **caution** rule on a green clause doesn't change the score — it's informational. The user still sees the rule hit in the detail panel.
+- A **serious** rule on a green clause downgrades to yellow, not red — the high embedding similarity provides confidence that the clause isn't fundamentally broken.
+- A **critical** rule always forces red regardless of embedding — unlimited liability or blanket IP assignment is dangerous even in a well-structured clause.
+
+### Flag Source Indicator
+
+Each flagged clause includes a `flagSource` field indicating what drove the severity:
+- `"similarity"` — flagged because embedding similarity was below threshold
+- `"pattern"` — flagged because a rule detected aggressive language (embedding was green)
+- `"both"` — flagged by both low similarity and pattern detection
+- `null` — green clause, not flagged
 
 ---
 
 ## 8. Scoring System
 
-**File:** `src/lib/scoring.ts`
+**Files:** `src/lib/scoring.ts`, `src/lib/llm-scorer.ts`
 
-### Per-Clause Scoring
+### Hybrid Scoring Pipeline
 
-Each clause receives a traffic-light score based on two inputs:
+Each clause is scored through a three-layer pipeline:
 
-#### Embedding Similarity Thresholds
+#### Layer 1: Embedding Match (Fast Retrieval)
 
-| Similarity Score | Traffic Light | Meaning |
-|-----------------|---------------|---------|
-| ≥ 0.82 | Green | Clause closely matches an industry standard template. Low risk. |
-| 0.65 – 0.81 | Yellow | Clause deviates meaningfully from standard. Worth reviewing. |
-| < 0.65 | Red | Clause is substantially different from any known standard. High risk. |
-| < 0.50 | No Match | Clause is so different it's considered "novel" — no standard reference point exists. Displayed as a special warning. |
+Cosine similarity finds the closest standard clause. This is a **retrieval** step, not a scoring step — it identifies which standard to compare against. The similarity percentage is shown in the UI for transparency but does **not** determine severity.
 
-These thresholds are stored in a config object and can be tuned:
+Embedding similarity thresholds (0.82/0.65/0.50) are retained as fallback only, used when LLM scoring fails.
+
+#### Layer 2: LLM Severity Scoring (Primary Signal)
+
+**File:** `src/lib/llm-scorer.ts` | **Model:** Gemini 2.5 Pro
+
+For each clause + its best standard match, the LLM judges **functional equivalence**:
+- Does the uploaded clause achieve the same legal effect as the standard?
+- Are there missing protections, additional obligations, or scope differences?
+- Classification: green (equivalent), yellow (notable deviations), red (significant differences)
+
+This replaces rigid cosine similarity thresholds. A severability clause that scores 63% cosine similarity but is functionally equivalent gets scored green by the LLM.
+
+All clauses are scored (not just flagged ones). Processed in batches of 5 for concurrency. Falls back to embedding thresholds if the LLM call fails.
+
+#### Layer 3: Rule Tier Override
 
 ```typescript
-export const THRESHOLDS = {
-  green: 0.82,
-  yellow: 0.65,
-  novel: 0.50,
-};
+function combineSeverity(
+  llmSeverity: Severity,
+  ruleHits: RuleHit[],
+): { severity: Severity; flagSource: FlagSource }
 ```
 
-#### Combined Scoring (Embedding + Rules)
-
-```typescript
-function combineSeverity(embeddingSeverity, ruleHits) {
-  // Find the worst severity among all rule hits
-  // Return whichever is worse: embedding score or rule hits
-}
-```
+The tier-based matrix from Section 7 applies on top of the LLM score. Critical rules still override green LLM scores to red. Returns both the final severity and a `flagSource`.
 
 ### Overall Risk Score (0–100)
 
@@ -475,25 +496,37 @@ Generates plain-English explanations for flagged (yellow/red) clauses. This is t
 
 ### Model Used
 
-**Google Gemini 2.0 Flash** via the `@google/generative-ai` SDK.
+**Google Gemini 2.5 Pro** via the `@google/generative-ai` SDK.
 
-Chosen for: fast inference speed, low cost, and good-enough quality for generating plain-English summaries. The LLM does not make scoring decisions — it only explains decisions already made by the embedding + rule engine.
+Used for both LLM-based severity scoring (`llm-scorer.ts`) and explanation generation (`explainer.ts`). Chosen for strong legal reasoning ability and structured output reliability.
 
-### Prompt Design
+### Prompt Design — Flag-Source-Specific
 
-Each flagged clause is sent with context about:
-1. The clause text itself
-2. The closest matching standard clause (name + text + similarity %)
-3. Any aggressive pattern rule hits
+The prompt is tailored based on `flagSource` to produce targeted explanations instead of generic summaries. Three prompt variants:
+
+1. **Flagged by similarity** (`flagSource === "similarity"`): The prompt tells the LLM the clause was flagged because its text differs from standard templates, and asks it to compare the uploaded clause against the standard text and point out specific differences in scope, duration, obligations, or rights.
+
+2. **Flagged by pattern** (`flagSource === "pattern"`): The prompt tells the LLM the embedding similarity was actually high (green-level) but an aggressive pattern was detected. It includes the rule tier (critical/serious/caution) and asks the LLM to explain the specific pattern and why it's risky even though the clause structure is close to standard.
+
+3. **Flagged by both** (`flagSource === "both"`): The prompt asks the LLM to address both concerns — structural deviation from standard and the specific aggressive pattern.
+
+Each prompt includes:
+- The clause text
+- The full standard clause text for side-by-side comparison
+- Similarity score with interpretation
+- Rule hits with tier labels (e.g., `[CRITICAL — serious issue regardless of context]`)
+- Explicit instructions to reference actual phrases from the clause and avoid vague statements
 
 The prompt asks for a structured JSON response:
 
 ```json
 {
-  "explanation": "2-3 sentences explaining the risk to the person signing.",
-  "normalVersion": "1-2 sentences describing what a standard version would look like."
+  "explanation": "2-3 sentences referencing actual clause language and specific risks.",
+  "normalVersion": "1-2 sentences describing what would change in a fair version, or null if the clause is already close to standard."
 }
 ```
+
+The `normalVersion` field can be `null` — if the LLM determines the clause doesn't need meaningful changes, the "What Standard Looks Like" section is not shown in the UI. This prevents generic filler responses.
 
 ### Concurrency
 
@@ -514,7 +547,7 @@ The user explicitly selects their contract type (NDA or SaaS Agreement) before u
 ### Why User Selection Instead of Auto-Detection
 
 1. **Accuracy** — The user knows what they're signing; keyword detection can misclassify.
-2. **Better comparisons** — Standards are filtered by the selected type, so clauses are only compared against relevant templates (10 NDA standards or 18 SaaS standards).
+2. **Better comparisons** — Standards are filtered by the selected type, so clauses are only compared against relevant templates (16 NDA standards or 29 SaaS standards).
 3. **Simpler UX** — The user understands upfront what they're getting analyzed against.
 
 ### Supported Types
@@ -681,14 +714,15 @@ select-type → upload → analyzing → report
 | `src/lib/comparison.ts` | ~55 | Cosine similarity calculation + best-match finder against standard clause database. |
 | `src/lib/rules.ts` | ~260 | 15 aggressive pattern detection rules (7 RED, 8 YELLOW). Regex + keyword matching. |
 | `src/lib/scoring.ts` | ~50 | Traffic-light thresholds, severity combination logic, overall risk score calculation. |
-| `src/lib/explainer.ts` | ~70 | Gemini 2.0 Flash integration. Generates plain-English explanations for flagged clauses. |
+| `src/lib/llm-scorer.ts` | ~100 | Gemini 2.5 Pro integration. LLM-based severity scoring — judges functional equivalence of each clause against its matched standard. |
+| `src/lib/explainer.ts` | ~145 | Gemini 2.5 Pro integration. Generates flag-source-specific plain-English explanations for flagged clauses. |
 | `src/lib/analyzer.ts` | ~70 | Orchestrator. Accepts contract type, filters standards, ties pipeline together: parse, segment, embed, compare, score, explain, report. |
 
 ### Data Layer
 
 | File | Purpose |
 |------|---------|
-| `src/data/standards.json` | 28 standard clause templates with pre-computed embeddings. Sourced from Common Paper (NDA) and Bonterms (SaaS). |
+| `src/data/standards.json` | 45 standard clause templates with pre-computed embeddings. Sourced from Common Paper (NDA) and Bonterms (SaaS), covering both substantive and boilerplate clauses. |
 | `src/data/standards-loader.ts` | Loads and caches standards.json in memory. |
 | `src/types/index.ts` | All TypeScript type definitions (ContractType, StandardClause, ExtractedClause, ClauseAnalysis, AnalysisReport, etc.). |
 | `scripts/seed-standards.ts` | Seed script. Defines all standard clause templates with source provenance, calls OpenAI to compute embeddings, writes standards.json. |
@@ -715,7 +749,8 @@ select-type → upload → analyzing → report
 | Component | Cost | Notes |
 |-----------|------|-------|
 | OpenAI Embeddings | ~$0.0002 | ~10K tokens per contract at $0.02/MTok |
-| Gemini 2.0 Flash | ~$0.001-0.005 | Only for flagged clauses, depends on how many |
+| Gemini 2.5 Pro (scoring) | ~$0.005-0.015 | All clauses scored, batched by 5 |
+| Gemini 2.5 Pro (explanations) | ~$0.003-0.010 | Only for flagged clauses |
 | **Total per analysis** | **~$0.001-0.006** | |
 
 ### Seeding Cost (One-Time)

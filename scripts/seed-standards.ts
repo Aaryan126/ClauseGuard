@@ -171,6 +171,96 @@ const rawStandards: RawStandard[] = [
     sourceRef: "Common Paper Mutual NDA v1.0 §11",
     role: "anchor",
   },
+  {
+    id: "nda-proprietary-rights-001",
+    contractType: "nda",
+    category: "IP Rights",
+    clauseName: "Proprietary Rights and No License",
+    standardText:
+      "Each party retains all of its intellectual property and other rights in its Confidential Information. Neither this MNDA nor any disclosure of Confidential Information grants the Receiving Party any rights or licenses to the Disclosing Party's Confidential Information, except the limited right to review and use the Confidential Information solely for the Purpose.",
+    summary:
+      "Disclosing party keeps all IP rights. Sharing info under the NDA does not transfer or license any intellectual property.",
+    aggressiveIndicators: ["grants an irrevocable license", "assigns all rights", "work made for hire"],
+    normalRange: { description: "Standard clause preserves IP ownership. Should not grant licenses beyond the NDA purpose. Any IP assignment or license grant language is unusual in an NDA." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §7",
+    role: "anchor",
+  },
+  {
+    id: "nda-disclaimer-001",
+    contractType: "nda",
+    category: "Disclaimer",
+    clauseName: "Disclaimer of Warranties",
+    standardText:
+      'ALL CONFIDENTIAL INFORMATION IS PROVIDED "AS IS." THE DISCLOSING PARTY MAKES NO WARRANTIES, EXPRESS, IMPLIED, OR OTHERWISE, REGARDING THE ACCURACY, COMPLETENESS OR PERFORMANCE OF ANY SUCH INFORMATION.',
+    summary:
+      "Confidential information is shared as-is with no guarantees about its accuracy or completeness.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard disclaimer. Both parties should disclaim warranties on shared information. Absence of this clause is not aggressive but is unusual." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §8",
+    role: "anchor",
+  },
+  {
+    id: "nda-severability-001",
+    contractType: "nda",
+    category: "Severability",
+    clauseName: "Severability",
+    standardText:
+      "If a court of competent jurisdiction finds any provision of this MNDA invalid or unenforceable, the remainder of this MNDA will be interpreted so as best to effect the intent of the parties. The parties agree to replace any invalid provision with a valid provision that most closely approximates the intent and economic effect of the invalid provision.",
+    summary:
+      "If one clause is struck down, the rest of the agreement survives. Invalid provisions are replaced with the closest valid alternative.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard boilerplate. Should preserve the rest of the agreement if one clause fails. Most contracts include this." },
+    source: "common-paper",
+    sourceRef: "Common Paper Mutual NDA v1.0 §11",
+    role: "anchor",
+  },
+  {
+    id: "nda-notices-001",
+    contractType: "nda",
+    category: "Notices",
+    clauseName: "Notices",
+    standardText:
+      "All notices, requests and approvals under this MNDA must be in writing and delivered to the addresses specified by the parties, and will be deemed given: (1) upon receipt if by personal delivery, (2) upon receipt if by certified or registered mail (return receipt requested), or (3) one day after dispatch if by commercial overnight delivery service.",
+    summary:
+      "Legal notices must be in writing and delivered by mail, courier, or in person. Specifies when notice is considered received.",
+    aggressiveIndicators: ["by posting on website", "at any time without notice"],
+    normalRange: { description: "Standard notice provision. Should require written notice with a clear delivery mechanism. Notice 'by posting on a website' is aggressive." },
+    source: "manual",
+    sourceRef: "Standard NDA practice",
+    role: "anchor",
+  },
+  {
+    id: "nda-counterparts-001",
+    contractType: "nda",
+    category: "Execution",
+    clauseName: "Counterparts and Electronic Signatures",
+    standardText:
+      "This MNDA may be executed in counterparts, each of which is deemed an original, but all of which together are considered one agreement. Execution may occur by electronic signature, which will be deemed an original signature for all purposes.",
+    summary:
+      "The agreement can be signed in separate copies and electronically. Each copy is treated as an original.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard boilerplate allowing flexible execution. Nearly universal in modern contracts." },
+    source: "manual",
+    sourceRef: "Standard NDA practice",
+    role: "anchor",
+  },
+  {
+    id: "nda-relationship-001",
+    contractType: "nda",
+    category: "Relationship",
+    clauseName: "Relationship of the Parties",
+    standardText:
+      "This MNDA does not create a partnership, agency, joint venture, or employment relationship between the parties. Neither party has the authority to bind the other or incur obligations on the other's behalf without prior written consent.",
+    summary:
+      "The NDA does not make the parties partners, agents, or employers of each other. Neither can act on behalf of the other.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard clause clarifying no agency or partnership is created. Nearly universal in commercial contracts." },
+    source: "manual",
+    sourceRef: "Standard NDA practice",
+    role: "anchor",
+  },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SAAS AGREEMENT CLAUSES — Source: Bonterms Cloud Terms v1.0
@@ -448,6 +538,171 @@ const rawStandards: RawStandard[] = [
     normalRange: { description: "Restrictions on resale, reverse engineering, and competitive use are standard. Restrictions on benchmarking, public commentary, or criticism are aggressive and potentially anti-competitive." },
     source: "bonterms",
     sourceRef: "Bonterms Cloud Terms v1.0 §9",
+    role: "anchor",
+  },
+  {
+    id: "saas-compliance-001",
+    contractType: "saas",
+    category: "Compliance",
+    clauseName: "Mutual Compliance with Laws",
+    standardText:
+      "Each party will comply with all Laws that apply to its performance under this Agreement.",
+    summary:
+      "Both parties must follow all applicable laws in performing under the agreement.",
+    aggressiveIndicators: ["customer shall indemnify for all regulatory fines", "regardless of fault"],
+    normalRange: { description: "Standard mutual compliance obligation. Should be mutual, not one-sided. One-sided compliance indemnities are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §6",
+    role: "anchor",
+  },
+  {
+    id: "saas-users-001",
+    contractType: "saas",
+    category: "Users",
+    clauseName: "User Accounts and Responsibility",
+    standardText:
+      "Customer is responsible for provisioning and managing its User accounts, for its Users' actions through the Cloud Service and for their compliance with this Agreement. Customer will require that its Users keep their login credentials confidential and will promptly notify Provider if Customer becomes aware of any compromise of its User login credentials.",
+    summary:
+      "Customer manages user accounts and is responsible for user actions. Users must keep credentials confidential.",
+    aggressiveIndicators: ["provider may access user accounts", "provider may change credentials"],
+    normalRange: { description: "Standard user management responsibility clause. Customer should control its own accounts. Provider access to user accounts without consent is unusual." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §3",
+    role: "anchor",
+  },
+  {
+    id: "saas-third-party-001",
+    contractType: "saas",
+    category: "Third-Party",
+    clauseName: "Third-Party Platforms",
+    standardText:
+      "Customer may choose to enable integrations with or exchange Customer Data with Third-Party Platforms. Customer's use of a Third-Party Platform is governed by its agreement with the relevant provider, not this Agreement, and Provider is not responsible for Third-Party Platforms or how their providers use Customer Data.",
+    summary:
+      "Third-party integrations are the customer's responsibility. The provider is not liable for third-party platforms.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard disclaimer of responsibility for third-party integrations. Provider should not be liable for platforms it doesn't control." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §10",
+    role: "anchor",
+  },
+  {
+    id: "saas-publicity-001",
+    contractType: "saas",
+    category: "Publicity",
+    clauseName: "Publicity",
+    standardText:
+      "Neither party may publicly announce this Agreement without the other party's prior approval or except as required by Laws.",
+    summary:
+      "Neither party can publicly announce the agreement without the other's consent, unless required by law.",
+    aggressiveIndicators: ["provider may use customer's name", "customer grants permission to use logo"],
+    normalRange: { description: "Mutual approval required for publicity. One-sided rights to use the other party's name or logo without consent are aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §20",
+    role: "anchor",
+  },
+  {
+    id: "saas-notices-001",
+    contractType: "saas",
+    category: "Notices",
+    clauseName: "Notices",
+    standardText:
+      "Except as set out in this Agreement, notices, requests and approvals under this Agreement must be in writing to the addresses on the Cover Page and will be deemed given: (1) upon receipt if by personal delivery, (2) upon receipt if by certified or registered U.S. mail (return receipt requested), (3) one day after dispatch if by a commercial overnight delivery or (4) upon delivery if by email. Either party may update its address with notice to the other. Provider may also send operational notices through the Cloud Service.",
+    summary:
+      "Legal notices must be in writing via mail, courier, personal delivery, or email. Addresses can be updated with notice. Provider may send operational notices through the service.",
+    aggressiveIndicators: ["by posting on website without notice", "deemed received whether or not read"],
+    normalRange: { description: "Standard notice clause with multiple delivery methods. Should allow address updates. Notice solely 'by posting on a website' is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.3",
+    role: "anchor",
+  },
+  {
+    id: "saas-entire-agreement-001",
+    contractType: "saas",
+    category: "Entire Agreement",
+    clauseName: "Entire Agreement",
+    standardText:
+      'This Agreement is the parties\' entire agreement regarding its subject matter and supersedes any prior or contemporaneous agreements regarding its subject matter. In this Agreement, headings are for convenience only and "including" and similar terms are to be construed without limitation. Terms in business forms, purchase orders or quotes used by either party will not amend or modify this Agreement; any such documents are for administrative purposes only. This Agreement may be executed in counterparts.',
+    summary:
+      "This is the complete agreement, replacing all prior agreements. Headings don't affect meaning. Standard business forms can't modify the agreement. Can be signed in counterparts.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard integration/merger clause. Should supersede prior agreements and prevent modification by purchase orders or other business forms." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.4",
+    role: "anchor",
+  },
+  {
+    id: "saas-severability-001",
+    contractType: "saas",
+    category: "Severability",
+    clauseName: "Waivers and Severability",
+    standardText:
+      "Waivers must be signed by the waiving party's authorized representative and cannot be implied from conduct. If any provision of this Agreement is held invalid or unenforceable, it will be limited to the minimum extent necessary so that the remainder of this Agreement remains in effect.",
+    summary:
+      "Waivers must be explicit and signed. If a clause is invalid, it's trimmed rather than voiding the whole agreement.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard waivers and severability clause. Waivers should require written consent. Severability should preserve the rest of the agreement." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.8",
+    role: "anchor",
+  },
+  {
+    id: "saas-independent-contractors-001",
+    contractType: "saas",
+    category: "Relationship",
+    clauseName: "Independent Contractors",
+    standardText:
+      "The parties are independent contractors, not agents, partners or joint venturers.",
+    summary:
+      "Clarifies that neither party is the other's employee, agent, or partner.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard boilerplate clarifying the relationship. Nearly universal in commercial contracts." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.11",
+    role: "anchor",
+  },
+  {
+    id: "saas-no-third-party-beneficiaries-001",
+    contractType: "saas",
+    category: "General",
+    clauseName: "No Third-Party Beneficiaries",
+    standardText:
+      "There are no third-party beneficiaries to this Agreement.",
+    summary:
+      "Only the signing parties have rights under this agreement. No outside party can enforce it.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard boilerplate. Prevents non-parties from claiming rights under the agreement." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.12",
+    role: "anchor",
+  },
+  {
+    id: "saas-subcontractors-001",
+    contractType: "saas",
+    category: "Subcontractors",
+    clauseName: "Subcontractors",
+    standardText:
+      "Provider may use subcontractors and permit them to exercise its rights and fulfill its obligations, but Provider remains responsible for their compliance with this Agreement and for its overall performance under this Agreement.",
+    summary:
+      "Provider can use subcontractors but stays responsible for their work and compliance with the agreement.",
+    aggressiveIndicators: ["no responsibility for subcontractors", "customer assumes all risk"],
+    normalRange: { description: "Standard subcontracting clause. Provider should remain responsible for subcontractor compliance. Disclaiming responsibility for subcontractors is aggressive." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.10",
+    role: "anchor",
+  },
+  {
+    id: "saas-export-001",
+    contractType: "saas",
+    category: "Export",
+    clauseName: "Export Compliance",
+    standardText:
+      "Each party (a) will comply with all export and import Laws in performing this Agreement and (b) represents and warrants that it is not listed on any U.S. government list of prohibited or restricted parties or located in (or a national of) a country subject to a U.S. government embargo or designated by the U.S. government as a terrorist supporting country.",
+    summary:
+      "Both parties must comply with export/import laws and confirm they are not on any restricted party lists.",
+    aggressiveIndicators: [],
+    normalRange: { description: "Standard export compliance clause. Should be mutual. Required for any service with international reach." },
+    source: "bonterms",
+    sourceRef: "Bonterms Cloud Terms v1.0 §22.14",
     role: "anchor",
   },
 ];

@@ -2,11 +2,12 @@ import { parseDocument } from "./parser";
 import { segmentClauses } from "./segmenter";
 import { getEmbeddings } from "./embeddings";
 import { findBestMatch } from "./comparison";
-import { getSeverityFromSimilarity, combineSeverity, calculateOverallRiskScore, THRESHOLDS } from "./scoring";
+import { combineSeverity, calculateOverallRiskScore, THRESHOLDS } from "./scoring";
+import { scoreClausesWithLLM } from "./llm-scorer";
 import { checkAggressivePatterns } from "./rules";
 import { explainFlaggedClauses } from "./explainer";
 import { loadStandards } from "@/data/standards-loader";
-import { AnalysisReport, ClauseAnalysis, ContractType, Severity } from "@/types";
+import { AnalysisReport, ClauseAnalysis, ContractType } from "@/types";
 
 const CONTRACT_TYPE_LABELS: Record<ContractType, string> = {
   nda: "Non-Disclosure Agreement (NDA)",
@@ -41,40 +42,49 @@ async function runAnalysisPipeline(
     throw new Error("No clauses could be extracted from the document.");
   }
 
-  // Step 3: Load standard clauses filtered by contract type
+  // Step 1: Load standard clauses filtered by contract type
   const allStandards = await loadStandards();
   const standards = allStandards.filter((s) => s.contractType === contractType);
 
-  // Step 4: Generate embeddings for all extracted clauses
+  // Step 2: Generate embeddings for all extracted clauses
   const clauseTexts = clauses.map((c) => c.text);
   const embeddings = await getEmbeddings(clauseTexts);
 
-  // Step 5: Compare each clause against standards + run rules
+  // Step 3: Find best embedding match for each clause
+  const matchResults = clauses.map((_, i) => findBestMatch(embeddings[i], standards));
+  const bestMatchStandards = matchResults.map((m) => m?.standardClause ?? null);
+  const similarities = matchResults.map((m) => m?.similarity ?? 0);
+
+  // Step 4: LLM-based severity scoring (replaces rigid cosine thresholds)
+  const llmScores = await scoreClausesWithLLM(clauses, bestMatchStandards, similarities);
+
+  // Step 5: Run pattern rules on each clause
+  const allRuleHits = clauses.map((clause) => checkAggressivePatterns(clause.text));
+
+  // Step 6: Combine LLM severity + rule hits using tier system
   const analyses: ClauseAnalysis[] = clauses.map((clause, i) => {
-    const embedding = embeddings[i];
-    const bestMatch = findBestMatch(embedding, standards);
-    const ruleHits = checkAggressivePatterns(clause.text);
+    const similarity = similarities[i];
+    const bestMatch = matchResults[i];
+    const llmScore = llmScores[i];
+    const ruleHits = allRuleHits[i];
 
-    const embeddingSeverity: Severity = bestMatch
-      ? getSeverityFromSimilarity(bestMatch.similarity)
-      : "red";
-
-    const severity = combineSeverity(embeddingSeverity, ruleHits);
+    const { severity, flagSource } = combineSeverity(llmScore.severity, ruleHits);
 
     return {
       clause,
-      bestMatch: bestMatch && bestMatch.similarity >= THRESHOLDS.novel
-        ? { standardClause: bestMatch.standardClause, similarity: bestMatch.similarity }
+      bestMatch: bestMatch && similarity >= THRESHOLDS.novel
+        ? { standardClause: bestMatch.standardClause, similarity }
         : null,
       ruleHits,
       severity,
+      flagSource,
     };
   });
 
-  // Step 6: Get LLM explanations for flagged clauses
+  // Step 7: Get LLM explanations for flagged clauses only
   await explainFlaggedClauses(analyses);
 
-  // Step 7: Build the report
+  // Step 8: Build the report
   const severities = analyses.map((a) => a.severity);
   const summary = {
     green: severities.filter((s) => s === "green").length,

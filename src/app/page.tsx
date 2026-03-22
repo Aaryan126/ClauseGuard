@@ -277,7 +277,7 @@ export default function Home() {
                     {
                       number: "01",
                       title: "Compare",
-                      desc: "Each clause is embedded and compared against 28 lawyer-drafted standard templates using semantic similarity.",
+                      desc: "Each clause is embedded and compared against 45 lawyer-drafted standard templates using semantic similarity.",
                     },
                     {
                       number: "02",
@@ -347,12 +347,15 @@ export default function Home() {
             }}
           />
           <div className="flex-1 flex overflow-hidden">
-            <div className="flex-1 overflow-y-auto border-r bg-white dark:bg-gray-950 p-4">
+            <div className="flex-1 overflow-y-auto border-r border-gray-200 bg-gray-50/50 dark:bg-gray-950 p-4">
               <div className="mb-3">
-                <Button variant="outline" size="sm" onClick={handleReset}>
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  Back
-                </Button>
+                <button
+                  onClick={handleReset}
+                  className="inline-flex items-center gap-1.5 text-[12px] font-medium text-blue-900/60 hover:text-blue-900 dark:text-blue-400/60 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to home
+                </button>
               </div>
               <DocumentViewer
                 fileUrl={fileUrl}
