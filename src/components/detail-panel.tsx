@@ -186,7 +186,7 @@ export function DetailPanel({ clauses, missingClauses, contractType, selectedInd
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto">
         {activeTab === "clauses" && (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-blue-900/30 dark:divide-blue-400/30">
             {clauses.map((analysis, index) => {
               const isSelected = selectedIndex === index;
               const config = severityConfig[analysis.severity];
@@ -248,7 +248,7 @@ export function DetailPanel({ clauses, missingClauses, contractType, selectedInd
                 Standard clauses commonly found in this type of contract that may be worth including.
               </p>
             </div>
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-blue-900/30 dark:divide-blue-400/30">
               {missingClauses.map((mc) => (
                 <div key={mc.category} className="px-4 py-3 bg-white">
                   <p className="text-[13px] font-medium text-gray-800">{mc.clauseName}</p>
