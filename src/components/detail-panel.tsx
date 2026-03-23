@@ -4,6 +4,68 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import { ClauseAnalysis, Severity } from "@/types";
 
+/* ── Word-level diff for highlighting changes in proposed revision ── */
+
+function tokenize(text: string): string[] {
+  return text.split(/(\s+)/); // keeps whitespace as tokens so we can reconstruct
+}
+
+function computeLCS(a: string[], b: string[]): Set<number> {
+  // Returns indices in `b` that are part of the longest common subsequence with `a`
+  const m = a.length;
+  const n = b.length;
+
+  // Build LCS table (optimize: only need two rows)
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = m - 1; i >= 0; i--) {
+    for (let j = n - 1; j >= 0; j--) {
+      if (a[i].toLowerCase() === b[j].toLowerCase()) {
+        dp[i][j] = dp[i + 1][j + 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+      }
+    }
+  }
+
+  // Trace back to find which indices in b are matched
+  const matched = new Set<number>();
+  let i = 0, j = 0;
+  while (i < m && j < n) {
+    if (a[i].toLowerCase() === b[j].toLowerCase()) {
+      matched.add(j);
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      i++;
+    } else {
+      j++;
+    }
+  }
+  return matched;
+}
+
+function DiffRevision({ original, revision }: { original: string; revision: string }) {
+  const origTokens = tokenize(original);
+  const revTokens = tokenize(revision);
+  const matched = computeLCS(origTokens, revTokens);
+
+  return (
+    <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-[1.7] whitespace-pre-wrap">
+      {revTokens.map((token, i) => {
+        const isWhitespace = /^\s+$/.test(token);
+        if (isWhitespace || matched.has(i)) {
+          return <span key={i}>{token}</span>;
+        }
+        return (
+          <span key={i} className="font-bold">
+            {token}
+          </span>
+        );
+      })}
+    </p>
+  );
+}
+
 interface DetailPanelProps {
   clauses: ClauseAnalysis[];
   selectedIndex: number | null;
@@ -132,8 +194,8 @@ function ExpandedDetail({
 
   return (
     <div className={`border-t ${config.border} ${config.bg} px-4 pb-5 pt-3 space-y-5`}>
-      {/* Closest standard match — only show if similarity is meaningful */}
-      {bestMatch && bestMatch.similarity >= 0.65 && (
+      {/* Closest standard match — only show for flagged clauses with meaningful similarity */}
+      {severity !== "green" && bestMatch && bestMatch.similarity >= 0.65 && (
         <p className="text-[11px] text-gray-400">
           Compared against: <span className="text-gray-500 font-medium">{bestMatch.standardClause.clauseName}</span>
         </p>
@@ -236,13 +298,13 @@ function ExpandedDetail({
             </button>
           </div>
           <div className="rounded-md border-2 border-blue-900/15 bg-white dark:bg-gray-900 p-3">
-            <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-[1.7] whitespace-pre-wrap">{proposedRevision}</p>
+            <DiffRevision original={analysis.clause.text} revision={proposedRevision} />
           </div>
         </section>
       )}
 
-      {/* Reference — collapsible, only if match is meaningful */}
-      {bestMatch && bestMatch.similarity >= 0.65 && (
+      {/* Reference — collapsible, only for flagged clauses with meaningful match */}
+      {severity !== "green" && bestMatch && bestMatch.similarity >= 0.65 && (
         <section className="border-t border-gray-200/60 pt-3">
           <button
             onClick={(e) => { e.stopPropagation(); setRefOpen(!refOpen); }}
