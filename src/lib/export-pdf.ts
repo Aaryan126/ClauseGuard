@@ -252,6 +252,52 @@ export async function exportAnalysisPdf(report: AnalysisReport, fileName: string
     }
   }
 
+  // Missing clauses section
+  if (report.missingClauses && report.missingClauses.length > 0) {
+    ensureSpace(20);
+
+    doc.setDrawColor(230, 230, 230);
+    doc.line(MARGIN, y, MARGIN + CONTENT_W, y);
+    y += 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(30, 64, 120);
+    doc.text("Suggested Additions", MARGIN, y);
+    y += 3;
+
+    doc.setFontSize(FONT_LABEL);
+    doc.setTextColor(140, 140, 140);
+    doc.text(`${report.missingClauses.length} standard clauses you may want to include`, MARGIN, y);
+    y += 6;
+
+    for (const mc of report.missingClauses) {
+      ensureSpace(12);
+
+      // Importance dot
+      const impColor = mc.importance === "high" ? COLORS.red : mc.importance === "medium" ? COLORS.yellow : { r: 180, g: 180, b: 180 };
+      doc.setFillColor(impColor.r, impColor.g, impColor.b);
+      doc.circle(MARGIN + 2, y - 0.5, 1, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(FONT_SMALL);
+      doc.setTextColor(60, 60, 60);
+      doc.text(mc.clauseName, MARGIN + 6, y);
+      y += 3.5;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(FONT_LABEL);
+      doc.setTextColor(100, 100, 100);
+      const summaryLines = doc.splitTextToSize(mc.summary, CONTENT_W - 10) as string[];
+      for (const line of summaryLines) {
+        ensureSpace(LINE_H_SMALL);
+        doc.text(line, MARGIN + 6, y);
+        y += LINE_H_SMALL;
+      }
+      y += 3;
+    }
+  }
+
   // Footer on every page
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {

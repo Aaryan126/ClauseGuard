@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown } from "lucide-react";
-import { ClauseAnalysis, Severity } from "@/types";
+import { ChevronDown, Bookmark } from "lucide-react";
+import { ClauseAnalysis, ContractType, MissingClause, Severity } from "@/types";
+import { saveClause, deleteClause } from "@/lib/clause-library";
 
 /* ── Word-level diff for highlighting changes in proposed revision ── */
 
@@ -68,6 +69,8 @@ function DiffRevision({ original, revision }: { original: string; revision: stri
 
 interface DetailPanelProps {
   clauses: ClauseAnalysis[];
+  missingClauses: MissingClause[];
+  contractType: ContractType;
   selectedIndex: number | null;
   onClauseClick: (index: number) => void;
 }
@@ -102,14 +105,41 @@ const severityConfig: Record<
   },
 };
 
-export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPanelProps) {
+export function DetailPanel({ clauses, missingClauses, contractType, selectedIndex, onClauseClick }: DetailPanelProps) {
   const selectedRef = useRef<HTMLDivElement>(null);
+  // Maps clause index → library ID (if saved)
+  const [savedMap, setSavedMap] = useState<Map<number, string>>(new Map());
+
+  const handleToggleSave = async (index: number, analysis: ClauseAnalysis) => {
+    const existingId = savedMap.get(index);
+    if (existingId) {
+      // Already saved — remove from library
+      await deleteClause(existingId);
+      setSavedMap((prev) => {
+        const next = new Map(prev);
+        next.delete(index);
+        return next;
+      });
+    } else {
+      // Save to library
+      const text = analysis.proposedRevision || analysis.clause.text;
+      const id = await saveClause({
+        contractType,
+        category: analysis.bestMatch?.standardClause.category || "General",
+        title: analysis.clause.title,
+        text,
+      });
+      setSavedMap((prev) => new Map(prev).set(index, id));
+    }
+  };
 
   useEffect(() => {
     if (selectedRef.current) {
       selectedRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }, [selectedIndex]);
+
+  const [activeTab, setActiveTab] = useState<"clauses" | "suggestions">("clauses");
 
   if (clauses.length === 0) {
     return (
@@ -120,58 +150,114 @@ export function DetailPanel({ clauses, selectedIndex, onClauseClick }: DetailPan
   }
 
   return (
-    <div className="overflow-y-auto h-full">
-      {/* Header */}
-      <div className="px-4 py-3 border-b-2 border-blue-900/10 bg-white sticky top-0 z-10">
-        <h3 className="text-[13px] font-semibold text-blue-900">Clause Analysis</h3>
-        <p className="text-[11px] text-gray-400 mt-0.5">{clauses.length} clauses found</p>
+    <div className="flex flex-col h-full">
+      {/* Tabs */}
+      <div className="flex border-b-2 border-blue-900/10 bg-white sticky top-0 z-10 flex-shrink-0">
+        <button
+          onClick={() => setActiveTab("clauses")}
+          className={`flex-1 px-4 py-3 text-[13px] font-semibold transition-colors cursor-pointer ${
+            activeTab === "clauses"
+              ? "text-blue-900 border-b-2 border-blue-900 -mb-[2px]"
+              : "text-gray-400 hover:text-gray-600"
+          }`}
+        >
+          Clauses
+          <span className={`ml-1.5 text-[11px] font-medium ${activeTab === "clauses" ? "text-blue-900/60" : "text-gray-400"}`}>
+            {clauses.length}
+          </span>
+        </button>
+        {missingClauses.length > 0 && (
+          <button
+            onClick={() => setActiveTab("suggestions")}
+            className={`flex-1 px-4 py-3 text-[13px] font-semibold transition-colors cursor-pointer ${
+              activeTab === "suggestions"
+                ? "text-blue-900 border-b-2 border-blue-900 -mb-[2px]"
+                : "text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            Suggestions
+            <span className={`ml-1.5 text-[11px] font-medium ${activeTab === "suggestions" ? "text-blue-900/60" : "text-gray-400"}`}>
+              {missingClauses.length}
+            </span>
+          </button>
+        )}
       </div>
 
-      <div className="divide-y divide-gray-100">
-        {clauses.map((analysis, index) => {
-          const isSelected = selectedIndex === index;
-          const config = severityConfig[analysis.severity];
+      {/* Tab content */}
+      <div className="flex-1 overflow-y-auto">
+        {activeTab === "clauses" && (
+          <div className="divide-y divide-gray-100">
+            {clauses.map((analysis, index) => {
+              const isSelected = selectedIndex === index;
+              const config = severityConfig[analysis.severity];
 
-          return (
-            <div key={index} ref={isSelected ? selectedRef : undefined}>
-              {/* Collapsed row */}
-              <button
-                onClick={() => onClauseClick(isSelected ? -1 : index)}
-                className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer ${
-                  isSelected ? config.bg : `bg-white ${config.bgHover}`
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />
-                <div className="flex-1 min-w-0">
-                  <p className={`text-[13px] font-medium truncate ${isSelected ? "text-gray-900" : "text-gray-700"}`}>
-                    {analysis.clause.title || `Clause ${index + 1}`}
-                  </p>
-                  <p className={`text-[11px] mt-0.5 ${config.accent}`}>
-                    {config.label}
-                    {analysis.flagSource && (
-                      <span className="text-gray-400 ml-1.5 font-normal">
-                        · {analysis.flagSource === "similarity" ? "by similarity" : analysis.flagSource === "pattern" ? "by pattern" : "by both"}
-                      </span>
-                    )}
-                  </p>
+              return (
+                <div key={index} ref={isSelected ? selectedRef : undefined}>
+                  <button
+                    onClick={() => onClauseClick(isSelected ? -1 : index)}
+                    className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer ${
+                      isSelected ? config.bg : `bg-white ${config.bgHover}`
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[13px] font-medium truncate ${isSelected ? "text-gray-900" : "text-gray-700"}`}>
+                        {analysis.clause.title || `Clause ${index + 1}`}
+                      </p>
+                      <p className={`text-[11px] mt-0.5 ${config.accent}`}>
+                        {config.label}
+                      </p>
+                    </div>
+                    <span
+                      role="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleSave(index, analysis);
+                      }}
+                      className={`flex-shrink-0 p-1 rounded transition-colors cursor-pointer ${
+                        savedMap.has(index)
+                          ? "text-blue-900 dark:text-blue-400"
+                          : "text-gray-300 hover:text-blue-900/60 dark:hover:text-blue-400/60"
+                      }`}
+                      title={savedMap.has(index) ? "Remove from library" : "Save to library"}
+                    >
+                      <Bookmark className={`w-3.5 h-3.5 ${savedMap.has(index) ? "fill-current" : ""}`} />
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-gray-300 flex-shrink-0 transition-transform duration-200 ${
+                        isSelected ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {isSelected && (
+                    <ExpandedDetail
+                      analysis={analysis}
+                      config={config}
+                    />
+                  )}
                 </div>
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-300 flex-shrink-0 transition-transform duration-200 ${
-                    isSelected ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+              );
+            })}
+          </div>
+        )}
 
-              {/* Expanded detail */}
-              {isSelected && (
-                <ExpandedDetail
-                  analysis={analysis}
-                  config={config}
-                />
-              )}
+        {activeTab === "suggestions" && (
+          <div>
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-[12px] text-gray-500 leading-relaxed">
+                Standard clauses commonly found in this type of contract that may be worth including.
+              </p>
             </div>
-          );
-        })}
+            <div className="divide-y divide-gray-100">
+              {missingClauses.map((mc) => (
+                <div key={mc.category} className="px-4 py-3 bg-white">
+                  <p className="text-[13px] font-medium text-gray-800">{mc.clauseName}</p>
+                  <p className="text-[12px] text-gray-500 mt-1.5 leading-relaxed">{mc.summary}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -185,8 +271,6 @@ function ExpandedDetail({
 }: {
   analysis: ClauseAnalysis;
   config: (typeof severityConfig)[Severity];
-  textExpanded?: boolean;
-  onToggleText?: () => void;
 }) {
   const [refOpen, setRefOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -338,6 +422,7 @@ function ExpandedDetail({
           )}
         </section>
       )}
+
     </div>
   );
 }

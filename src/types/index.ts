@@ -54,6 +54,13 @@ export interface ClauseAnalysis {
   proposedRevision?: string;
 }
 
+export interface MissingClause {
+  clauseName: string;
+  category: string;
+  summary: string;
+  importance: "high" | "medium" | "low";
+}
+
 export interface AnalysisReport {
   contractType: string;
   totalClauses: number;
@@ -64,5 +71,6 @@ export interface AnalysisReport {
   };
   overallRiskScore: number; // 0-100
   clauses: ClauseAnalysis[];
+  missingClauses: MissingClause[];
   rawText: string;
 }

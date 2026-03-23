@@ -9,6 +9,7 @@ import { SummaryBar } from "@/components/summary-bar";
 import { DocumentViewer } from "@/components/document-viewer";
 import { DetailPanel } from "@/components/detail-panel";
 import { HistoryDropdown } from "@/components/history-dropdown";
+import { ClauseLibraryDropdown } from "@/components/clause-library";
 import { saveAnalysis, type HistoryEntry } from "@/lib/history-db";
 import { AnalysisReport, ContractType } from "@/types";
 
@@ -192,7 +193,10 @@ export default function Home() {
               <span className="text-sm text-gray-400">{fileName}</span>
             )}
             {view !== "analyzing" && (
-              <HistoryDropdown onSelect={handleHistorySelect} />
+              <>
+                <ClauseLibraryDropdown />
+                <HistoryDropdown onSelect={handleHistorySelect} />
+              </>
             )}
           </div>
         </div>
@@ -375,6 +379,8 @@ export default function Home() {
             <div className="w-[400px] flex-shrink-0 overflow-hidden bg-gray-50 dark:bg-gray-900">
               <DetailPanel
                 clauses={report.clauses}
+                missingClauses={report.missingClauses}
+                contractType={contractType || "nda"}
                 selectedIndex={selectedClause}
                 onClauseClick={(i) => setSelectedClause(i < 0 ? null : i)}
               />

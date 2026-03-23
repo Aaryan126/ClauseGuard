@@ -6,6 +6,7 @@ import { combineSeverity, calculateOverallRiskScore, THRESHOLDS } from "./scorin
 import { scoreClausesWithLLM } from "./llm-scorer";
 import { checkAggressivePatterns } from "./rules";
 import { explainFlaggedClauses } from "./explainer";
+import { detectMissingClauses } from "./missing-clauses";
 import { loadStandards } from "@/data/standards-loader";
 import { AnalysisReport, ClauseAnalysis, ContractType } from "@/types";
 
@@ -96,7 +97,10 @@ async function runAnalysisPipeline(
   // Step 7: Get LLM explanations for flagged clauses only
   await explainFlaggedClauses(analyses);
 
-  // Step 8: Build the report
+  // Step 8: Detect missing clauses
+  const missingClauses = await detectMissingClauses(analyses, standards, contractType, text);
+
+  // Step 9: Build the report
   const severities = analyses.map((a) => a.severity);
   const summary = {
     green: severities.filter((s) => s === "green").length,
@@ -110,6 +114,7 @@ async function runAnalysisPipeline(
     summary,
     overallRiskScore: calculateOverallRiskScore(severities),
     clauses: analyses,
+    missingClauses,
     rawText: text,
   };
 }

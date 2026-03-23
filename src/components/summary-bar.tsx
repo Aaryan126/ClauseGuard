@@ -12,7 +12,7 @@ interface SummaryBarProps {
 }
 
 export function SummaryBar({ report, onExportPdf }: SummaryBarProps) {
-  const { summary, contractType, totalClauses } = report;
+  const { summary, contractType, totalClauses, missingClauses } = report;
 
   return (
     <div className="bg-white dark:bg-gray-950 border-b-2 border-blue-900/10 dark:border-blue-400/10 px-5 py-3.5">
@@ -44,6 +44,15 @@ export function SummaryBar({ report, onExportPdf }: SummaryBarProps) {
         </div>
 
         <span className="text-[11px] text-gray-400">{totalClauses} clauses</span>
+
+        {missingClauses.length > 0 && (
+          <>
+            <span className="text-gray-200 dark:text-gray-700">|</span>
+            <span className="text-[11px] text-blue-900/60 dark:text-blue-400/60 font-medium">
+              {missingClauses.length} suggested
+            </span>
+          </>
+        )}
 
         {/* Export */}
         <div className="ml-auto">
