@@ -28,7 +28,7 @@ const severityOrder: Record<Severity, number> = { green: 0, yellow: 1, red: 2 };
 
 const severityLabel: Record<Severity, string> = {
   green: "Standard",
-  yellow: "Needs Review",
+  yellow: "Review",
   red: "High Risk",
 };
 
@@ -173,7 +173,7 @@ export function ComparisonView({ reportA, reportB, fileNameA, fileNameB, onClaus
                   <p className={`text-[10px] mt-0.5 ${cfg.color}`}>
                     {cfg.label}
                     {item.clauseA && item.clauseB && (
-                      <span className="text-gray-400 ml-1">
+                      <span className="text-gray-400 ml-3">
                         {severityLabel[item.clauseA.severity]} → {severityLabel[item.clauseB.severity]}
                       </span>
                     )}

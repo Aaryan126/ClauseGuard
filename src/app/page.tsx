@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Shield, ArrowLeft, ArrowRight, Plus, Minus } from "lucide-react";
+import { Shield, ArrowLeft, ArrowRight, Plus, Minus, PanelRightOpen, PanelRightClose } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload-zone";
 import { AnalysisProgress } from "@/components/analysis-progress";
@@ -51,50 +51,27 @@ const CONTRACT_OPTIONS: {
   },
 ];
 
-function ComparePanel({ reportA, reportB, fileNameA, fileNameB, onClauseSelect, onCollapseChange }: {
+function ComparePanel({ reportA, reportB, fileNameA, fileNameB, onClauseSelect, open }: {
   reportA: AnalysisReport;
   reportB: AnalysisReport;
   fileNameA: string;
   fileNameB: string;
   onClauseSelect: (idxA: number | null, idxB: number | null) => void;
-  onCollapseChange: (collapsed: boolean) => void;
+  open: boolean;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
-
-  const toggle = (val: boolean) => {
-    setCollapsed(val);
-    onCollapseChange(val);
-  };
-
   return (
-    <div className={`flex-shrink-0 overflow-hidden bg-gray-50 dark:bg-gray-900 border-l border-gray-200 transition-all duration-200 ${collapsed ? "w-10" : "w-[320px]"}`}>
-      {collapsed ? (
-        <button
-          onClick={() => toggle(false)}
-          className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          title="Show comparison"
-        >
-          <span className="text-[11px] font-semibold text-gray-400 [writing-mode:vertical-lr] rotate-180">Comparison</span>
-        </button>
-      ) : (
-        <div className="flex flex-col h-full">
-          <button
-            onClick={() => toggle(true)}
-            className="px-3 py-1.5 text-[11px] text-gray-400 hover:text-gray-600 cursor-pointer text-right flex-shrink-0"
-          >
-            Collapse
-          </button>
-          <div className="flex-1 overflow-hidden">
-            <ComparisonView
-              reportA={reportA}
-              reportB={reportB}
-              fileNameA={fileNameA}
-              fileNameB={fileNameB}
-              onClauseSelect={onClauseSelect}
-            />
-          </div>
+    <div className={`flex-shrink-0 overflow-hidden bg-gray-50 dark:bg-gray-900 border-l border-gray-200 transition-all duration-200 ${open ? "w-[320px]" : "w-0"}`}>
+      <div className="flex flex-col h-full w-[320px]">
+        <div className="flex-1 overflow-hidden">
+          <ComparisonView
+            reportA={reportA}
+            reportB={reportB}
+            fileNameA={fileNameA}
+            fileNameB={fileNameB}
+            onClauseSelect={onClauseSelect}
+          />
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -124,7 +101,7 @@ export default function Home() {
   const [fileTypeCompare, setFileTypeCompare] = useState("");
   const [selectedClauseA, setSelectedClauseA] = useState<number | null>(null);
   const [selectedClauseB, setSelectedClauseB] = useState<number | null>(null);
-  const [comparePanelCollapsed, setComparePanelCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [zoomA, setZoomA] = useState(0.7);
   const [zoomB, setZoomB] = useState(0.7);
 
@@ -348,6 +325,16 @@ export default function Home() {
             )}
             {view === "compare-report" && (
               <span className="text-sm text-gray-400">{fileNameA} vs {fileNameB}</span>
+            )}
+            {(view === "report" || view === "compare-report") && (
+              <button
+                onClick={() => setSidebarOpen((v) => !v)}
+                className="px-2.5 py-1.5 rounded-md bg-blue-900 text-white hover:bg-blue-950 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors cursor-pointer flex items-center gap-1.5"
+                title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+              >
+                {sidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+                <span className="text-[11px] font-medium">{sidebarOpen ? "Hide" : "Show"}</span>
+              </button>
             )}
             {view !== "analyzing" && (
               <>
@@ -604,7 +591,7 @@ export default function Home() {
                 onClauseClick={setSelectedClause}
               />
             </div>
-            <div className="w-[400px] flex-shrink-0 overflow-hidden bg-gray-50 dark:bg-gray-900">
+            <div className={`flex-shrink-0 overflow-hidden bg-gray-50 dark:bg-gray-900 transition-all duration-200 ${sidebarOpen ? "w-[400px]" : "w-0"}`}>
               <DetailPanel
                 clauses={report.clauses}
                 missingClauses={report.missingClauses}
@@ -691,7 +678,7 @@ export default function Home() {
               setSelectedClauseA(idxA);
               setSelectedClauseB(idxB);
             }}
-            onCollapseChange={setComparePanelCollapsed}
+            open={sidebarOpen}
           />
         </div>
       )}

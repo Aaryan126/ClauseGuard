@@ -15,7 +15,7 @@ const BG_COLORS: Record<Severity, { r: number; g: number; b: number }> = {
 
 const SEVERITY_LABELS: Record<Severity, string> = {
   green: "Standard",
-  yellow: "Needs Review",
+  yellow: "Review",
   red: "High Risk",
 };
 
@@ -98,7 +98,7 @@ export async function exportAnalysisPdf(report: AnalysisReport, fileName: string
   doc.setFontSize(FONT_SMALL);
   const counts = [
     { label: "Standard", count: report.summary.green, severity: "green" as Severity },
-    { label: "Needs Review", count: report.summary.yellow, severity: "yellow" as Severity },
+    { label: "Review", count: report.summary.yellow, severity: "yellow" as Severity },
     { label: "High Risk", count: report.summary.red, severity: "red" as Severity },
   ];
   let cx = MARGIN + 6;

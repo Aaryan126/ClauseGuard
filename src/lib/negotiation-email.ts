@@ -21,7 +21,7 @@ export async function generateNegotiationEmail(
 
   // Build clause summary for the prompt
   const clauseDetails = flaggedClauses.map((c, i) => {
-    const parts = [`Clause ${i + 1}: "${c.clause.title}" (${c.severity === "red" ? "High Risk" : "Needs Review"})`];
+    const parts = [`Clause ${i + 1}: "${c.clause.title}" (${c.severity === "red" ? "High Risk" : "Review"})`];
     if (c.suggestedAction) parts.push(`  Issue: ${c.suggestedAction}`);
     if (c.proposedRevision) parts.push(`  Proposed revision: "${c.proposedRevision.slice(0, 500)}"`);
     return parts.join("\n");

@@ -88,7 +88,7 @@ const severityConfig: Record<
     dot: "bg-emerald-500",
   },
   yellow: {
-    label: "Needs Review",
+    label: "Review",
     accent: "text-amber-700",
     bg: "bg-amber-50/60",
     bgHover: "hover:bg-gray-50",
