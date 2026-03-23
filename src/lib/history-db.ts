@@ -8,6 +8,11 @@ export interface HistoryEntry {
   fileBlob?: Blob;  // original file for PDF rendering
   analyzedAt: string; // ISO date
   report: AnalysisReport;
+  // Comparison fields (only present for compare entries)
+  isComparison?: boolean;
+  fileNameB?: string;
+  fileBlobB?: Blob;
+  reportB?: AnalysisReport;
 }
 
 interface ClauseGuardDB extends DBSchema {
@@ -50,12 +55,37 @@ export async function saveAnalysis(
   return id;
 }
 
+export async function saveComparison(
+  fileNameA: string,
+  fileNameB: string,
+  fileType: string,
+  fileA: File,
+  fileB: File,
+  reportA: AnalysisReport,
+  reportB: AnalysisReport
+): Promise<string> {
+  const db = await getDB();
+  const id = crypto.randomUUID();
+  await db.put("history", {
+    id,
+    fileName: fileNameA,
+    fileType,
+    fileBlob: new Blob([await fileA.arrayBuffer()], { type: fileA.type }),
+    analyzedAt: new Date().toISOString(),
+    report: reportA,
+    isComparison: true,
+    fileNameB,
+    fileBlobB: new Blob([await fileB.arrayBuffer()], { type: fileB.type }),
+    reportB,
+  });
+  return id;
+}
+
 /** List metadata only (no file blobs) for the history panel. */
-export async function listAnalyses(): Promise<Omit<HistoryEntry, "fileBlob">[]> {
+export async function listAnalyses(): Promise<Omit<HistoryEntry, "fileBlob" | "fileBlobB">[]> {
   const db = await getDB();
   const all = await db.getAllFromIndex("history", "by-date");
-  // Strip blobs so the list stays lightweight
-  return all.reverse().map(({ fileBlob: _, ...rest }) => rest);
+  return all.reverse().map(({ fileBlob: _, fileBlobB: _b, ...rest }) => rest);
 }
 
 export async function getAnalysis(

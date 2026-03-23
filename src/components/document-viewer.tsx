@@ -16,9 +16,10 @@ interface DocumentViewerProps {
   clauses: ClauseAnalysis[];
   selectedIndex: number | null;
   onClauseClick: (index: number) => void;
+  compact?: boolean;
 }
 
-export function DocumentViewer({ fileUrl, fileType, rawText, clauses, selectedIndex, onClauseClick }: DocumentViewerProps) {
+export function DocumentViewer({ fileUrl, fileType, rawText, clauses, selectedIndex, onClauseClick, compact }: DocumentViewerProps) {
   if (fileType === "pdf" && fileUrl) {
     return (
       <PdfViewer
@@ -33,6 +34,7 @@ export function DocumentViewer({ fileUrl, fileType, rawText, clauses, selectedIn
 
   return (
     <TextDocumentViewer
+      compact={compact}
       rawText={rawText}
       clauses={clauses}
       selectedIndex={selectedIndex}
@@ -66,11 +68,13 @@ function TextDocumentViewer({
   clauses,
   selectedIndex,
   onClauseClick,
+  compact,
 }: {
   rawText: string;
   clauses: ClauseAnalysis[];
   selectedIndex: number | null;
   onClauseClick: (index: number) => void;
+  compact?: boolean;
 }) {
   const segments = useMemo(() => {
     const result: TextSegment[] = [];

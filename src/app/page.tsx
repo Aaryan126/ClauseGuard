@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Shield, ArrowLeft } from "lucide-react";
+import { Shield, ArrowLeft, ArrowRight, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload-zone";
 import { AnalysisProgress } from "@/components/analysis-progress";
@@ -10,10 +10,12 @@ import { DocumentViewer } from "@/components/document-viewer";
 import { DetailPanel } from "@/components/detail-panel";
 import { HistoryDropdown } from "@/components/history-dropdown";
 import { ClauseLibraryDropdown } from "@/components/clause-library";
-import { saveAnalysis, type HistoryEntry } from "@/lib/history-db";
+import { saveAnalysis, saveComparison, type HistoryEntry } from "@/lib/history-db";
+import { ComparisonView } from "@/components/comparison-view";
 import { AnalysisReport, ContractType } from "@/types";
 
-type ViewState = "select-type" | "analyzing" | "report" | "error";
+type ViewState = "select-type" | "analyzing" | "report" | "error" | "compare-report";
+type AppMode = "analyze" | "compare";
 
 const CONTRACT_OPTIONS: {
   type: ContractType;
@@ -49,8 +51,57 @@ const CONTRACT_OPTIONS: {
   },
 ];
 
+function ComparePanel({ reportA, reportB, fileNameA, fileNameB, onClauseSelect, onCollapseChange }: {
+  reportA: AnalysisReport;
+  reportB: AnalysisReport;
+  fileNameA: string;
+  fileNameB: string;
+  onClauseSelect: (idxA: number | null, idxB: number | null) => void;
+  onCollapseChange: (collapsed: boolean) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggle = (val: boolean) => {
+    setCollapsed(val);
+    onCollapseChange(val);
+  };
+
+  return (
+    <div className={`flex-shrink-0 overflow-hidden bg-gray-50 dark:bg-gray-900 border-l border-gray-200 transition-all duration-200 ${collapsed ? "w-10" : "w-[320px]"}`}>
+      {collapsed ? (
+        <button
+          onClick={() => toggle(false)}
+          className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          title="Show comparison"
+        >
+          <span className="text-[11px] font-semibold text-gray-400 [writing-mode:vertical-lr] rotate-180">Comparison</span>
+        </button>
+      ) : (
+        <div className="flex flex-col h-full">
+          <button
+            onClick={() => toggle(true)}
+            className="px-3 py-1.5 text-[11px] text-gray-400 hover:text-gray-600 cursor-pointer text-right flex-shrink-0"
+          >
+            Collapse
+          </button>
+          <div className="flex-1 overflow-hidden">
+            <ComparisonView
+              reportA={reportA}
+              reportB={reportB}
+              fileNameA={fileNameA}
+              fileNameB={fileNameB}
+              onClauseSelect={onClauseSelect}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const [view, setView] = useState<ViewState>("select-type");
+  const [mode, setMode] = useState<AppMode>("analyze");
   const [contractType, setContractType] = useState<ContractType | null>(null);
   const [report, setReport] = useState<AnalysisReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +111,22 @@ export default function Home() {
   const [selectedClause, setSelectedClause] = useState<number | null>(null);
   const fileUrlRef = useRef<string | null>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
+
+  // Compare mode state
+  const [compareFileA, setCompareFileA] = useState<File | null>(null);
+  const [compareFileB, setCompareFileB] = useState<File | null>(null);
+  const [reportA, setReportA] = useState<AnalysisReport | null>(null);
+  const [reportB, setReportB] = useState<AnalysisReport | null>(null);
+  const [fileNameA, setFileNameA] = useState("");
+  const [fileNameB, setFileNameB] = useState("");
+  const [fileUrlA, setFileUrlA] = useState<string | null>(null);
+  const [fileUrlB, setFileUrlB] = useState<string | null>(null);
+  const [fileTypeCompare, setFileTypeCompare] = useState("");
+  const [selectedClauseA, setSelectedClauseA] = useState<number | null>(null);
+  const [selectedClauseB, setSelectedClauseB] = useState<number | null>(null);
+  const [comparePanelCollapsed, setComparePanelCollapsed] = useState(false);
+  const [zoomA, setZoomA] = useState(0.7);
+  const [zoomB, setZoomB] = useState(0.7);
 
   useEffect(() => {
     if (view === "report" && report) {
@@ -141,25 +208,99 @@ export default function Home() {
   };
 
   const handleHistorySelect = (entry: HistoryEntry) => {
-    // Revoke any previous blob URL
-    if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
+    if (entry.isComparison && entry.reportB) {
+      // Comparison entry — restore both files and reports
+      if (fileUrlA) URL.revokeObjectURL(fileUrlA);
+      if (fileUrlB) URL.revokeObjectURL(fileUrlB);
 
-    // Restore original file as blob URL if stored
-    if (entry.fileBlob) {
-      const url = URL.createObjectURL(entry.fileBlob);
-      fileUrlRef.current = url;
-      setFileUrl(url);
-      setFileType(entry.fileType);
+      const urlA = entry.fileBlob ? URL.createObjectURL(entry.fileBlob) : null;
+      const urlB = entry.fileBlobB ? URL.createObjectURL(entry.fileBlobB) : null;
+      setFileUrlA(urlA);
+      setFileUrlB(urlB);
+      setFileTypeCompare(entry.fileType);
+      setReportA(entry.report);
+      setReportB(entry.reportB);
+      setFileNameA(entry.fileName);
+      setFileNameB(entry.fileNameB || "");
+      setSelectedClauseA(null);
+      setSelectedClauseB(null);
+      setView("compare-report");
     } else {
-      fileUrlRef.current = null;
-      setFileUrl(null);
-      setFileType("txt");
-    }
+      // Single analysis entry
+      if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
 
-    setReport(entry.report);
-    setFileName(entry.fileName);
-    setSelectedClause(null);
-    setView("report");
+      if (entry.fileBlob) {
+        const url = URL.createObjectURL(entry.fileBlob);
+        fileUrlRef.current = url;
+        setFileUrl(url);
+        setFileType(entry.fileType);
+      } else {
+        fileUrlRef.current = null;
+        setFileUrl(null);
+        setFileType("txt");
+      }
+
+      setReport(entry.report);
+      setFileName(entry.fileName);
+      setSelectedClause(null);
+      setView("report");
+    }
+  };
+
+  const handleCompare = async () => {
+    if (!contractType || !compareFileA || !compareFileB) return;
+
+    setView("analyzing");
+    setError(null);
+    setFileNameA(compareFileA.name);
+    setFileNameB(compareFileB.name);
+
+    const ext = compareFileA.name.split(".").pop()?.toLowerCase() || "";
+    setFileTypeCompare(ext);
+
+    // Create blob URLs for document viewers
+    const urlA = URL.createObjectURL(compareFileA);
+    const urlB = URL.createObjectURL(compareFileB);
+    setFileUrlA(urlA);
+    setFileUrlB(urlB);
+
+    try {
+      const analyzeFile = async (file: File): Promise<AnalysisReport> => {
+        if (ext === "pdf") {
+          const { extractPdfText } = await import("@/components/pdf-viewer");
+          const url = URL.createObjectURL(file);
+          const text = await extractPdfText(url);
+          URL.revokeObjectURL(url);
+          const res = await fetch("/api/analyze-text", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, contractType }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Analysis failed.");
+          return data;
+        } else {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("contractType", contractType);
+          const res = await fetch("/api/analyze", { method: "POST", body: formData });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Analysis failed.");
+          return data;
+        }
+      };
+
+      const [rA, rB] = await Promise.all([analyzeFile(compareFileA), analyzeFile(compareFileB)]);
+      setReportA(rA);
+      setReportB(rB);
+      setView("compare-report");
+
+      // Save to history (fire-and-forget)
+      saveComparison(compareFileA.name, compareFileB.name, ext, compareFileA, compareFileB, rA, rB).catch(() => {});
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Comparison failed.");
+      setView("error");
+    }
   };
 
   const handleReset = () => {
@@ -175,6 +316,19 @@ export default function Home() {
     }
     setFileUrl(null);
     setFileType("");
+    setCompareFileA(null);
+    setCompareFileB(null);
+    setReportA(null);
+    setReportB(null);
+    setFileNameA("");
+    setFileNameB("");
+    if (fileUrlA) URL.revokeObjectURL(fileUrlA);
+    if (fileUrlB) URL.revokeObjectURL(fileUrlB);
+    setFileUrlA(null);
+    setFileUrlB(null);
+    setFileTypeCompare("");
+    setSelectedClauseA(null);
+    setSelectedClauseB(null);
   };
 
   const selectedLabel = CONTRACT_OPTIONS.find((o) => o.type === contractType)?.label;
@@ -192,6 +346,9 @@ export default function Home() {
             {view === "report" && (
               <span className="text-sm text-gray-400">{fileName}</span>
             )}
+            {view === "compare-report" && (
+              <span className="text-sm text-gray-400">{fileNameA} vs {fileNameB}</span>
+            )}
             {view !== "analyzing" && (
               <>
                 <ClauseLibraryDropdown />
@@ -203,7 +360,7 @@ export default function Home() {
       </header>
 
       {/* Pre-report views */}
-      {view !== "report" && (
+      {view !== "report" && view !== "compare-report" && (
         <div className="flex-1 overflow-auto">
           {view === "select-type" && (
             <div className="max-w-4xl mx-auto px-4 py-14">
@@ -223,8 +380,34 @@ export default function Home() {
                 </p>
               </div>
 
+              {/* Mode toggle */}
+              <div className="mt-10 flex justify-center">
+                <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-800 p-0.5 bg-gray-100 dark:bg-gray-900">
+                  <button
+                    onClick={() => setMode("analyze")}
+                    className={`px-4 py-1.5 text-[13px] font-medium rounded-md transition-all cursor-pointer ${
+                      mode === "analyze"
+                        ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    Analyze
+                  </button>
+                  <button
+                    onClick={() => setMode("compare")}
+                    className={`px-4 py-1.5 text-[13px] font-medium rounded-md transition-all cursor-pointer ${
+                      mode === "compare"
+                        ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    Compare Versions
+                  </button>
+                </div>
+              </div>
+
               {/* Contract type selection */}
-              <div className="mt-12">
+              <div className="mt-8">
                 <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 mb-3 text-center uppercase tracking-wider">
                   Select contract type
                 </p>
@@ -268,15 +451,60 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Upload zone */}
+              {/* Upload zone(s) */}
               <div ref={uploadRef} className={`mt-10 transition-all duration-300 ${contractType ? "opacity-100 translate-y-0" : "opacity-25 translate-y-1 pointer-events-none"}`}>
-                <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 mb-3 text-center uppercase tracking-wider">
-                  Upload document
-                </p>
-                <UploadZone onFileSelected={handleFileSelected} isAnalyzing={false} active={!!contractType} />
-                <p className="text-[12px] text-gray-400 text-center mt-2.5">
-                  PDF, DOCX, or TXT — up to 10 MB
-                </p>
+                {mode === "analyze" ? (
+                  <>
+                    <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 mb-3 text-center uppercase tracking-wider">
+                      Upload document
+                    </p>
+                    <UploadZone onFileSelected={handleFileSelected} isAnalyzing={false} active={!!contractType} />
+                    <p className="text-[12px] text-gray-400 text-center mt-2.5">
+                      PDF, DOCX, or TXT — up to 10 MB
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 mb-3 text-center uppercase tracking-wider">
+                      Upload both versions
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[12px] font-medium text-gray-500 mb-1.5">Old Version</p>
+                        <UploadZone
+                          onFileSelected={(f) => setCompareFileA(f)}
+                          isAnalyzing={false}
+                          active={!!contractType}
+                        />
+                        {compareFileA && (
+                          <p className="text-[11px] text-emerald-600 mt-1.5 truncate">{compareFileA.name}</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[12px] font-medium text-gray-500 mb-1.5">New Version</p>
+                        <UploadZone
+                          onFileSelected={(f) => setCompareFileB(f)}
+                          isAnalyzing={false}
+                          active={!!contractType}
+                        />
+                        {compareFileB && (
+                          <p className="text-[11px] text-emerald-600 mt-1.5 truncate">{compareFileB.name}</p>
+                        )}
+                      </div>
+                    </div>
+                    {compareFileA && compareFileB && (
+                      <div className="mt-4 text-center">
+                        <Button onClick={handleCompare}>
+                          <ArrowRight className="w-4 h-4 mr-1.5" />
+                          Compare Versions
+                        </Button>
+                      </div>
+                    )}
+                    <p className="text-[12px] text-gray-400 text-center mt-2.5">
+                      Same file format for both — PDF, DOCX, or TXT
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* How it works */}
@@ -387,6 +615,85 @@ export default function Home() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Compare report view */}
+      {view === "compare-report" && reportA && reportB && (
+        <div className="flex-1 flex overflow-hidden">
+          {/* Old Version document */}
+          <div className="flex-1 min-w-0 overflow-hidden border-r border-gray-200 bg-gray-50/50 dark:bg-gray-950 relative flex flex-col">
+            <div className="flex items-center justify-between px-2 py-1.5 flex-shrink-0 border-b border-gray-200 bg-white dark:bg-gray-950">
+              <button
+                onClick={handleReset}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-blue-900/60 hover:text-blue-900 dark:text-blue-400/60 dark:hover:text-blue-400 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                Back
+              </button>
+              <span className="text-[10px] font-medium text-gray-400">Old Version</span>
+            </div>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
+              <div className="origin-top-left" style={{ transform: `scale(${zoomA})`, width: `${(100 / zoomA).toFixed(1)}%` }}>
+                <div className="p-3">
+                  <DocumentViewer
+                    fileUrl={fileUrlA}
+                    fileType={fileTypeCompare}
+                    rawText={reportA.rawText}
+                    clauses={reportA.clauses}
+                    selectedIndex={selectedClauseA}
+                    onClauseClick={setSelectedClauseA}
+                  />
+                </div>
+              </div>
+              {/* Zoom controls */}
+              <div className="sticky bottom-2 float-right mr-2 flex items-center gap-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm px-1 py-0.5 z-10">
+                <button onClick={() => setZoomA((z) => Math.max(0.4, z - 0.1))} className="p-1 text-gray-400 hover:text-gray-700 cursor-pointer"><Minus className="w-3 h-3" /></button>
+                <span className="text-[10px] text-gray-500 w-8 text-center">{Math.round(zoomA * 100)}%</span>
+                <button onClick={() => setZoomA((z) => Math.min(1, z + 0.1))} className="p-1 text-gray-400 hover:text-gray-700 cursor-pointer"><Plus className="w-3 h-3" /></button>
+              </div>
+            </div>
+          </div>
+
+          {/* New Version document */}
+          <div className="flex-1 min-w-0 overflow-hidden border-r border-gray-200 bg-gray-50/50 dark:bg-gray-950 flex flex-col">
+            <div className="flex items-center justify-end px-2 py-1.5 flex-shrink-0 border-b border-gray-200 bg-white dark:bg-gray-950">
+              <span className="text-[10px] font-medium text-gray-400">New Version</span>
+            </div>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
+              <div className="origin-top-left" style={{ transform: `scale(${zoomB})`, width: `${(100 / zoomB).toFixed(1)}%` }}>
+                <div className="p-3">
+                  <DocumentViewer
+                    fileUrl={fileUrlB}
+                    fileType={fileTypeCompare}
+                    rawText={reportB.rawText}
+                    clauses={reportB.clauses}
+                    selectedIndex={selectedClauseB}
+                    onClauseClick={setSelectedClauseB}
+                  />
+                </div>
+              </div>
+              {/* Zoom controls */}
+              <div className="sticky bottom-2 float-right mr-2 flex items-center gap-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm px-1 py-0.5 z-10">
+                <button onClick={() => setZoomB((z) => Math.max(0.4, z - 0.1))} className="p-1 text-gray-400 hover:text-gray-700 cursor-pointer"><Minus className="w-3 h-3" /></button>
+                <span className="text-[10px] text-gray-500 w-8 text-center">{Math.round(zoomB * 100)}%</span>
+                <button onClick={() => setZoomB((z) => Math.min(1, z + 0.1))} className="p-1 text-gray-400 hover:text-gray-700 cursor-pointer"><Plus className="w-3 h-3" /></button>
+              </div>
+            </div>
+          </div>
+
+          {/* Comparison panel — collapsible */}
+          <ComparePanel
+            reportA={reportA}
+            reportB={reportB}
+            fileNameA={fileNameA}
+            fileNameB={fileNameB}
+            onClauseSelect={(idxA, idxB) => {
+              setSelectedClauseA(idxA);
+              setSelectedClauseB(idxB);
+            }}
+            onCollapseChange={setComparePanelCollapsed}
+          />
+        </div>
       )}
     </main>
   );

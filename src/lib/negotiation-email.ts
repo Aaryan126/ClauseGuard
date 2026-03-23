@@ -11,7 +11,7 @@ export async function generateNegotiationEmail(
   report: AnalysisReport,
   fileName: string
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const flaggedClauses = report.clauses.filter((c) => c.severity !== "green");
 

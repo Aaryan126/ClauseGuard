@@ -99,12 +99,16 @@ export function HistoryDropdown({ onSelect }: HistoryDropdownProps) {
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 ${worstDot(entry.report.summary)}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate">
-                        {entry.fileName}
+                        {entry.isComparison ? `${entry.fileName} vs ${entry.fileNameB}` : entry.fileName}
                       </p>
                       <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
                         <span>{date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
                         <span>·</span>
-                        <span>{entry.report.totalClauses} clauses</span>
+                        {entry.isComparison ? (
+                          <span className="text-blue-900/60 font-medium">Comparison</span>
+                        ) : (
+                          <span>{entry.report.totalClauses} clauses</span>
+                        )}
                         <span>·</span>
                         <span className="flex items-center gap-1">
                           {entry.report.summary.red > 0 && (
