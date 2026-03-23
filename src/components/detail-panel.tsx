@@ -190,13 +190,14 @@ export function DetailPanel({ clauses, missingClauses, contractType, selectedInd
             {clauses.map((analysis, index) => {
               const isSelected = selectedIndex === index;
               const config = severityConfig[analysis.severity];
+              const hasContent = analysis.explanation || analysis.ruleHits.length > 0 || analysis.suggestedAction || analysis.proposedRevision;
 
               return (
                 <div key={index} ref={isSelected ? selectedRef : undefined}>
                   <button
-                    onClick={() => onClauseClick(isSelected ? -1 : index)}
-                    className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer ${
-                      isSelected ? config.bg : `bg-white ${config.bgHover}`
+                    onClick={() => hasContent ? onClauseClick(isSelected ? -1 : index) : undefined}
+                    className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors ${hasContent ? "cursor-pointer" : "cursor-default"} ${
+                      isSelected ? config.bg : `bg-white ${hasContent ? config.bgHover : ""}`
                     }`}
                   >
                     <div className="flex-1 min-w-0">
@@ -222,14 +223,16 @@ export function DetailPanel({ clauses, missingClauses, contractType, selectedInd
                     >
                       <Bookmark className={`w-3.5 h-3.5 ${savedMap.has(index) ? "fill-current" : ""}`} />
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-gray-300 flex-shrink-0 transition-transform duration-200 ${
-                        isSelected ? "rotate-180" : ""
-                      }`}
-                    />
+                    {hasContent && (
+                      <ChevronDown
+                        className={`w-4 h-4 text-gray-300 flex-shrink-0 transition-transform duration-200 ${
+                          isSelected ? "rotate-180" : ""
+                        }`}
+                      />
+                    )}
                   </button>
 
-                  {isSelected && (
+                  {isSelected && hasContent && (
                     <ExpandedDetail
                       analysis={analysis}
                       config={config}
@@ -263,7 +266,7 @@ export function DetailPanel({ clauses, missingClauses, contractType, selectedInd
   );
 }
 
-/* ── Expanded clause detail ── */
+/* ── Expanded clause detail — progressive disclosure ── */
 
 function ExpandedDetail({
   analysis,
@@ -272,157 +275,100 @@ function ExpandedDetail({
   analysis: ClauseAnalysis;
   config: (typeof severityConfig)[Severity];
 }) {
-  const [refOpen, setRefOpen] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [copied, setCopied] = useState(false);
-  const { bestMatch, ruleHits, severity, flagSource, explanation, normalVersion, suggestedAction, proposedRevision } = analysis;
+  const { bestMatch, ruleHits, severity, explanation, normalVersion, suggestedAction, proposedRevision } = analysis;
+
+  const hasMore = proposedRevision || normalVersion || (severity !== "green" && bestMatch && bestMatch.similarity >= 0.65);
 
   return (
-    <div className={`border-t ${config.border} ${config.bg} px-4 pb-5 pt-3 space-y-5`}>
-      {/* Closest standard match — only show for flagged clauses with meaningful similarity */}
-      {severity !== "green" && bestMatch && bestMatch.similarity >= 0.65 && (
-        <p className="text-[11px] text-gray-400">
-          Compared against: <span className="text-gray-500 font-medium">{bestMatch.standardClause.clauseName}</span>
-        </p>
-      )}
+    <div className={`border-t ${config.border} ${config.bg} px-4 pb-4 pt-3 space-y-4`}>
 
-      {/* Flagged patterns */}
-      {ruleHits.length > 0 && (
-        <section>
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
-            Flagged Patterns
-          </h4>
-          <div className="space-y-1.5">
-            {ruleHits.map((hit) => (
-              <div
-                key={hit.ruleId}
-                className={`rounded-md border p-2.5 ${
-                  hit.severity === "red" ? "border-red-200 bg-red-50/60" : "border-amber-200 bg-amber-50/60"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                      hit.severity === "red" ? "bg-red-500" : "bg-amber-500"
-                    }`}
-                  />
-                  <span className="font-semibold text-[12px] text-gray-800">{hit.ruleName}</span>
-                </div>
-                <p className="text-[12px] text-gray-600 leading-relaxed pl-3.5">{hit.details}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Flag source */}
-      {flagSource && (
-        <section>
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-            Why This Was Flagged
-          </h4>
-          <p className="text-[12px] text-gray-600 leading-relaxed">
-            {flagSource === "similarity" && "This clause was flagged because its text differs significantly from industry-standard templates."}
-            {flagSource === "pattern" && "This clause was flagged because it matches known aggressive contract patterns, even though its overall structure is close to standard."}
-            {flagSource === "both" && "This clause was flagged both for differing from standard templates and for matching known aggressive patterns."}
-          </p>
-        </section>
-      )}
-
-      {/* What this means */}
+      {/* ── Primary: Explanation + suggested action (always visible) ── */}
       {explanation && (
-        <section>
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-            What This Means
-          </h4>
-          <p className="text-[13px] text-gray-700 leading-[1.7]">{explanation}</p>
-        </section>
+        <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-[1.7]">{explanation}</p>
       )}
 
-      {/* What standard looks like */}
-      {normalVersion && (
-        <section>
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-blue-900 dark:text-blue-400 mb-1.5">
-            What Standard Looks Like
-          </h4>
-          <div className="rounded-md border border-blue-900/15 bg-blue-950/5 p-3">
-            <p className="text-[13px] text-gray-700 leading-[1.7]">{normalVersion}</p>
-          </div>
-        </section>
+      {ruleHits.length > 0 && (
+        <div className="space-y-1.5">
+          {ruleHits.map((hit) => (
+            <div key={hit.ruleId} className="flex items-start gap-2">
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${
+                hit.severity === "red" ? "bg-red-500" : "bg-amber-500"
+              }`} />
+              <p className="text-[12px] text-gray-600 dark:text-gray-400 leading-relaxed">
+                <span className="font-semibold text-gray-800 dark:text-gray-200">{hit.ruleName}:</span> {hit.details}
+              </p>
+            </div>
+          ))}
+        </div>
       )}
 
-      {/* Suggested action */}
       {suggestedAction && (
-        <section>
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-blue-900 dark:text-blue-400 mb-1.5">
-            Suggested Action
-          </h4>
-          <div className="rounded-md border-2 border-blue-900/20 bg-blue-950/5 dark:border-blue-400/20 dark:bg-blue-900/10 p-3">
-            <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 leading-[1.6]">{suggestedAction}</p>
-          </div>
-        </section>
+        <div className="rounded-md bg-blue-950/5 dark:bg-blue-900/10 px-3 py-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-900/60 dark:text-blue-400/60 mb-1">Recommended</p>
+          <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 leading-[1.6]">{suggestedAction}</p>
+        </div>
       )}
 
-      {/* Proposed revision — copy-ready replacement */}
-      {proposedRevision && (
-        <section>
-          <div className="flex items-center justify-between mb-1.5">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-blue-900 dark:text-blue-400">
-              Proposed Revision
-            </h4>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(proposedRevision);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              }}
-              className="text-[11px] font-medium text-blue-900/50 hover:text-blue-900 dark:text-blue-400/50 dark:hover:text-blue-400 transition-colors cursor-pointer"
-            >
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
-          <div className="rounded-md border-2 border-blue-900/15 bg-white dark:bg-gray-900 p-3">
-            <DiffRevision original={analysis.clause.text} revision={proposedRevision} />
-          </div>
-        </section>
+      {/* ── Show more toggle ── */}
+      {hasMore && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowMore(!showMore); }}
+          className="text-[11px] font-medium text-blue-900/50 hover:text-blue-900 dark:text-blue-400/50 dark:hover:text-blue-400 transition-colors cursor-pointer flex items-center gap-1"
+        >
+          <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showMore ? "rotate-180" : ""}`} />
+          {showMore ? "Show less" : "Show revision & details"}
+        </button>
       )}
 
-      {/* Reference — collapsible, only for flagged clauses with meaningful match */}
-      {severity !== "green" && bestMatch && bestMatch.similarity >= 0.65 && (
-        <section className="border-t border-gray-200/60 pt-3">
-          <button
-            onClick={(e) => { e.stopPropagation(); setRefOpen(!refOpen); }}
-            className="w-full flex items-center justify-between cursor-pointer group"
-          >
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-500 transition-colors">
-              Reference Standard
-            </h4>
-            <ChevronDown className={`w-3.5 h-3.5 text-gray-300 transition-transform duration-200 ${refOpen ? "rotate-180" : ""}`} />
-          </button>
-          {refOpen && (
-            <div className="mt-2.5">
-              <p className="text-[13px] font-semibold text-gray-800">{bestMatch.standardClause.clauseName}</p>
+      {/* ── Secondary: Proposed revision, standard comparison, reference ── */}
+      {showMore && (
+        <div className="space-y-4">
+          {/* Proposed revision */}
+          {proposedRevision && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-900 dark:text-blue-400">Proposed Revision</p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(proposedRevision);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="text-[11px] font-medium text-blue-900/50 hover:text-blue-900 dark:text-blue-400/50 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                >
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
+              <div className="rounded-md border border-blue-900/15 dark:border-blue-400/15 bg-white dark:bg-gray-900 p-3">
+                <DiffRevision original={analysis.clause.text} revision={proposedRevision} />
+              </div>
+            </div>
+          )}
+
+          {/* What standard looks like */}
+          {normalVersion && (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">What Standard Looks Like</p>
+              <p className="text-[12px] text-gray-500 leading-[1.7]">{normalVersion}</p>
+            </div>
+          )}
+
+          {/* Reference standard */}
+          {severity !== "green" && bestMatch && bestMatch.similarity >= 0.65 && (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Reference Standard</p>
+              <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-200">{bestMatch.standardClause.clauseName}</p>
               {bestMatch.standardClause.sourceRef && (
                 <p className="text-[11px] text-gray-400 mt-0.5">{bestMatch.standardClause.sourceRef}</p>
               )}
-              <p className="text-[12px] text-gray-500 leading-relaxed mt-1.5">
-                {bestMatch.standardClause.summary}
-              </p>
-              {bestMatch.standardClause.normalRange?.description && (
-                <div className="mt-2.5 pt-2.5 border-t border-gray-200/50">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">
-                    Acceptable Range
-                  </p>
-                  <p className="text-[12px] text-gray-500 leading-relaxed">
-                    {bestMatch.standardClause.normalRange.description}
-                  </p>
-                </div>
-              )}
+              <p className="text-[12px] text-gray-500 leading-relaxed mt-1">{bestMatch.standardClause.summary}</p>
             </div>
           )}
-        </section>
+        </div>
       )}
-
     </div>
   );
 }
