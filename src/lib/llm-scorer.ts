@@ -85,10 +85,16 @@ If it IS a substantive clause, judge it on these criteria:
 3. Are there any ADDITIONAL OBLIGATIONS or restrictions beyond what the standard requires?
 4. Is the SCOPE broader or narrower than standard (duration, geography, parties affected)?
 
+IMPORTANT — Scoring calibration:
+- A clause that says the same thing in fewer words is NOT a deviation. Condensed wording with the same legal effect = green.
+- A clause that omits a minor procedural detail (e.g., doesn't specify "30 days" but says "reasonable time") is green, not yellow.
+- Only score yellow if there is a SUBSTANTIVE difference — a missing protection, a broader obligation, a one-sided term, or a materially different scope.
+- Only score red if the clause is genuinely harmful or missing critical protections.
+
 Classify the clause as one of:
 - "skip" — Not a substantive legal clause (signature block, header, footer, page number, copyright notice, formatting).
-- "green" — Functionally equivalent to standard. Minor wording differences are fine. No meaningful risk difference.
-- "yellow" — Partially equivalent but has notable deviations. Missing a protection, broader scope, or additional obligation that the signer should review.
+- "green" — Functionally equivalent to standard. Condensed wording, minor phrasing differences, or slightly different structure with the same legal effect. No meaningful risk difference.
+- "yellow" — Partially equivalent but has a substantive deviation. A missing protection, meaningfully broader scope, or additional obligation that changes the risk profile.
 - "red" — Significantly different from standard. Missing critical protections, imposes unusual obligations, or contains terms that could be harmful.
 
 Respond ONLY with this JSON:
@@ -103,10 +109,22 @@ Respond ONLY with this JSON:
 
     const jsonMatch = responseText.match(/\{[\s\S]*?\}/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      const sev = parsed.severity;
-      if (sev === "skip" || sev === "green" || sev === "yellow" || sev === "red") {
-        return { severity: sev, reasoning: parsed.reasoning || "" };
+      // Fix common LLM JSON issues: single quotes, trailing commas
+      const cleaned = jsonMatch[0]
+        .replace(/'/g, '"')
+        .replace(/,\s*}/g, "}");
+      try {
+        const parsed = JSON.parse(cleaned);
+        const sev = parsed.severity;
+        if (sev === "skip" || sev === "green" || sev === "yellow" || sev === "red") {
+          return { severity: sev, reasoning: parsed.reasoning || "" };
+        }
+      } catch {
+        // Try regex extraction as last resort
+        const sevMatch = responseText.match(/"severity"\s*:\s*"(skip|green|yellow|red)"/);
+        if (sevMatch) {
+          return { severity: sevMatch[1] as LLMSeverity, reasoning: "Parsed from malformed JSON" };
+        }
       }
     }
   } catch (error) {

@@ -7,7 +7,11 @@
       "Bash(gh api:*)",
       "WebFetch(domain:github.com)",
       "WebSearch",
-      "WebFetch(domain:commonpaper.com)"
+      "WebFetch(domain:commonpaper.com)",
+      "Bash(DOTENV_CONFIG_PATH=.env.local npx tsx -r dotenv/config scripts/validate.ts 2>&1)",
+      "Bash(curl -s http://localhost:3099/api/validate)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl:*)"
     ]
   }
 }

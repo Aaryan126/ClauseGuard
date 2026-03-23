@@ -117,13 +117,32 @@ const patterns: AggressivePattern[] = [
     id: "no-compelled-disclosure",
     name: "No Carve-Out for Compelled Disclosure",
     category: "Confidentiality",
-    severity: "red",
-    tier: "critical",
+    severity: "yellow",
+    tier: "caution",
     detect: (text) => {
       const lower = text.toLowerCase();
-      const isConfidentiality = lower.includes("confidential") && (lower.includes("shall not disclose") || lower.includes("not to disclose") || lower.includes("obligation"));
-      const hasCarveOut = lower.includes("court order") || lower.includes("subpoena") || lower.includes("legal requirement") || lower.includes("compelled by law") || lower.includes("required by law") || lower.includes("governmental order");
-      if (isConfidentiality && !hasCarveOut) {
+      // Only fire on clauses that are actually imposing a non-disclosure duty —
+      // must contain an active prohibition on disclosure, not just mention confidentiality
+      const hasNonDisclosureDuty =
+        (lower.includes("shall not disclose") || lower.includes("not to disclose") ||
+         lower.includes("will not disclose") || lower.includes("may not disclose") ||
+         lower.includes("must not disclose") || lower.includes("not disclose confidential")) &&
+        lower.includes("confidential");
+      // Also catch "under any circumstances" blanket prohibitions
+      const hasBlanketProhibition =
+        lower.includes("confidential") && lower.includes("under any circumstances") && lower.includes("disclose");
+
+      if (!hasNonDisclosureDuty && !hasBlanketProhibition) {
+        return { matched: false, details: "" };
+      }
+
+      const hasCarveOut =
+        lower.includes("court order") || lower.includes("subpoena") ||
+        lower.includes("legal requirement") || lower.includes("compelled by law") ||
+        lower.includes("required by law") || lower.includes("governmental order") ||
+        lower.includes("required by applicable law") || lower.includes("legally required") ||
+        lower.includes("pursuant to law") || lower.includes("order of a court");
+      if (!hasCarveOut) {
         return { matched: true, details: "Confidentiality clause has no exception for legally compelled disclosure (court orders, subpoenas). This is a standard carve-out that should be present." };
       }
       return { matched: false, details: "" };
