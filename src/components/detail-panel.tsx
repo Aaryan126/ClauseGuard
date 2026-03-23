@@ -247,7 +247,7 @@ export function DetailPanel({ clauses, missingClauses, contractType, selectedInd
         {activeTab === "suggestions" && (
           <div>
             <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-[12px] text-gray-500 leading-relaxed">
+              <p className="text-[12px] text-blue-900/70 dark:text-blue-400/70 leading-relaxed">
                 Standard clauses commonly found in this type of contract that may be worth including.
               </p>
             </div>

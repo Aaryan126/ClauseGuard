@@ -350,42 +350,37 @@ export default function Home() {
       {view !== "report" && view !== "compare-report" && (
         <div className="flex-1 overflow-auto">
           {view === "select-type" && (
-            <div className="max-w-4xl mx-auto px-4 py-14">
+            <div className="max-w-4xl mx-auto px-6 py-16">
               {/* Hero */}
-              <div className="text-center">
-                <div className="inline-flex items-center gap-1.5 bg-blue-950/5 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 px-3 py-1 rounded-full text-[12px] font-medium mb-5 tracking-wide">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-900 dark:bg-blue-400" />
-                  Powered by semantic analysis
-                </div>
-                <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 leading-[1.15]">
+              <div className="text-center mb-14">
+                <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 leading-[1.1]">
                   Know what you&apos;re signing<span className="text-blue-900 dark:text-blue-400">.</span>
                 </h1>
-                <p className="text-[16px] text-gray-500 max-w-lg mx-auto leading-relaxed mt-4">
-                  Upload a contract and see how each clause compares to lawyer-drafted
-                  industry standards. Aggressive or unusual terms are flagged
-                  with clear, plain-English explanations.
+                <p className="text-[18px] text-gray-500 max-w-xl mx-auto leading-relaxed mt-5">
+                  Every clause checked against lawyer-drafted standards.
+                  Risks explained in plain English. Revisions ready to copy.
                 </p>
               </div>
 
-              {/* Mode toggle */}
-              <div className="mt-10 flex justify-center">
-                <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-800 p-0.5 bg-gray-100 dark:bg-gray-900">
+              {/* Mode toggle — large, prominent */}
+              <div className="flex justify-center mb-12">
+                <div className="inline-flex rounded-xl border-2 border-gray-200 dark:border-gray-800 p-1 bg-gray-50 dark:bg-gray-900 gap-1">
                   <button
                     onClick={() => setMode("analyze")}
-                    className={`px-4 py-1.5 text-[13px] font-medium rounded-md transition-all cursor-pointer ${
+                    className={`px-6 py-3 text-[15px] font-semibold rounded-lg transition-all duration-200 cursor-pointer ${
                       mode === "analyze"
-                        ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        ? "bg-blue-900 text-white shadow-md dark:bg-blue-700"
+                        : "text-gray-500 hover:text-gray-800 hover:bg-white dark:hover:text-gray-200 dark:hover:bg-gray-800"
                     }`}
                   >
-                    Analyze
+                    Analyze Contract
                   </button>
                   <button
                     onClick={() => setMode("compare")}
-                    className={`px-4 py-1.5 text-[13px] font-medium rounded-md transition-all cursor-pointer ${
+                    className={`px-6 py-3 text-[15px] font-semibold rounded-lg transition-all duration-200 cursor-pointer ${
                       mode === "compare"
-                        ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        ? "bg-blue-900 text-white shadow-md dark:bg-blue-700"
+                        : "text-gray-500 hover:text-gray-800 hover:bg-white dark:hover:text-gray-200 dark:hover:bg-gray-800"
                     }`}
                   >
                     Compare Versions
@@ -394,9 +389,9 @@ export default function Home() {
               </div>
 
               {/* Contract type selection */}
-              <div className="mt-8">
-                <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 mb-3 text-center uppercase tracking-wider">
-                  Select contract type
+              <div>
+                <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-200 mb-4 text-center">
+                  What type of contract?
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {CONTRACT_OPTIONS.map((option) => {
@@ -405,33 +400,16 @@ export default function Home() {
                       <button
                         key={option.type}
                         onClick={() => handleTypeSelected(option.type)}
-                        className={`group text-left rounded-xl border-2 p-5 transition-all duration-200 cursor-pointer ${
+                        className={`group text-center rounded-xl border-2 px-4 py-6 transition-all duration-200 cursor-pointer ${
                           isActive
-                            ? "border-blue-900 bg-blue-950/5 dark:border-blue-400 dark:bg-blue-900/15 shadow-sm"
+                            ? "border-blue-900 bg-blue-950/5 dark:border-blue-400 dark:bg-blue-900/15 shadow-md"
                             : "border-gray-200 dark:border-gray-800 hover:border-gray-300 hover:shadow-sm dark:hover:border-gray-700"
                         }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[16px] font-bold ${isActive ? "text-blue-900 dark:text-blue-300" : "text-gray-800 dark:text-gray-200"}`}>
-                            {option.label}
-                          </span>
-                          <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                            isActive ? "border-blue-900 bg-blue-900 dark:border-blue-400 dark:bg-blue-400" : "border-gray-300 dark:border-gray-600 group-hover:border-gray-400"
-                          }`}>
-                            {isActive && <span className="w-2 h-2 rounded-full bg-white dark:bg-gray-900" />}
-                          </span>
-                        </div>
-                        <p className="text-[13px] text-gray-500 mt-2 leading-relaxed">{option.description}</p>
-                        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                            isActive
-                              ? "bg-blue-900/10 text-blue-900 dark:bg-blue-900/30 dark:text-blue-300"
-                              : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
-                          }`}>
-                            {option.clauseCount} clauses
-                          </span>
-                          <span className="text-[11px] text-gray-400">{option.standards}</span>
-                        </div>
+                        <span className={`text-[17px] font-bold block ${isActive ? "text-blue-900 dark:text-blue-300" : "text-gray-800 dark:text-gray-200"}`}>
+                          {option.shortLabel}
+                        </span>
+                        <p className="text-[13px] text-gray-400 mt-1">{option.label}</p>
                       </button>
                     );
                   })}
@@ -439,72 +417,80 @@ export default function Home() {
               </div>
 
               {/* Upload zone(s) */}
-              <div ref={uploadRef} className={`mt-10 transition-all duration-300 ${contractType ? "opacity-100 translate-y-0" : "opacity-25 translate-y-1 pointer-events-none"}`}>
+              <div ref={uploadRef} className={`mt-12 transition-all duration-500 ${contractType ? "opacity-100 translate-y-0" : "opacity-20 translate-y-2 pointer-events-none"}`}>
                 {mode === "analyze" ? (
-                  <>
-                    <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 mb-3 text-center uppercase tracking-wider">
-                      Upload document
+                  <div className="max-w-2xl mx-auto">
+                    <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-200 mb-4 text-center">
+                      Upload your contract
                     </p>
                     <UploadZone onFileSelected={handleFileSelected} isAnalyzing={false} active={!!contractType} />
-                    <p className="text-[12px] text-gray-400 text-center mt-2.5">
+                    <p className="text-[13px] text-gray-400 text-center mt-3">
                       PDF, DOCX, or TXT — up to 10 MB
                     </p>
-                  </>
+                  </div>
                 ) : (
-                  <>
-                    <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 mb-3 text-center uppercase tracking-wider">
+                  <div>
+                    <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-200 mb-4 text-center">
                       Upload both versions
                     </p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-[12px] font-medium text-gray-500 mb-1.5">Old Version</p>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[11px] font-bold text-gray-500">1</span>
+                          <p className="text-[14px] font-medium text-gray-700 dark:text-gray-300">Old Version</p>
+                        </div>
                         <UploadZone
                           onFileSelected={(f) => setCompareFileA(f)}
                           isAnalyzing={false}
                           active={!!contractType}
                         />
                         {compareFileA && (
-                          <p className="text-[11px] text-emerald-600 mt-1.5 truncate">{compareFileA.name}</p>
+                          <p className="text-[12px] text-emerald-600 truncate">{compareFileA.name}</p>
                         )}
                       </div>
-                      <div>
-                        <p className="text-[12px] font-medium text-gray-500 mb-1.5">New Version</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-6 h-6 rounded-full bg-blue-900 dark:bg-blue-700 flex items-center justify-center text-[11px] font-bold text-white">2</span>
+                          <p className="text-[14px] font-medium text-gray-700 dark:text-gray-300">New Version</p>
+                        </div>
                         <UploadZone
                           onFileSelected={(f) => setCompareFileB(f)}
                           isAnalyzing={false}
                           active={!!contractType}
                         />
                         {compareFileB && (
-                          <p className="text-[11px] text-emerald-600 mt-1.5 truncate">{compareFileB.name}</p>
+                          <p className="text-[12px] text-emerald-600 truncate">{compareFileB.name}</p>
                         )}
                       </div>
                     </div>
                     {compareFileA && compareFileB && (
-                      <div className="mt-4 text-center">
-                        <Button onClick={handleCompare}>
-                          <ArrowRight className="w-4 h-4 mr-1.5" />
+                      <div className="mt-6 text-center">
+                        <button
+                          onClick={handleCompare}
+                          className="px-8 py-3 bg-blue-900 text-white text-[15px] font-semibold rounded-lg hover:bg-blue-950 transition-colors cursor-pointer shadow-md"
+                        >
                           Compare Versions
-                        </Button>
+                        </button>
                       </div>
                     )}
-                    <p className="text-[12px] text-gray-400 text-center mt-2.5">
+                    <p className="text-[13px] text-gray-400 text-center mt-3">
                       Same file format for both — PDF, DOCX, or TXT
                     </p>
-                  </>
+                  </div>
                 )}
               </div>
 
               {/* How it works */}
-              <div className="mt-16 pt-10 border-t border-gray-200 dark:border-gray-800">
-                <p className="text-[12px] font-semibold text-gray-400 mb-6 text-center uppercase tracking-wider">
+              <div className="mt-20 pt-12 border-t border-gray-200 dark:border-gray-800">
+                <p className="text-[13px] font-semibold text-gray-400 mb-8 text-center uppercase tracking-wider">
                   How it works
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                   {[
                     {
                       number: "01",
                       title: "Compare",
-                      desc: "Each clause is embedded and compared against 68 lawyer-drafted standard templates using semantic similarity.",
+                      desc: "Each clause is matched against 68 lawyer-drafted standard templates and scored by AI for functional equivalence.",
                     },
                     {
                       number: "02",
@@ -513,18 +499,18 @@ export default function Home() {
                     },
                     {
                       number: "03",
-                      title: "Explain",
-                      desc: "Flagged clauses get a plain-English explanation of the risk, what a standard version looks like, and the specific rule triggered.",
+                      title: "Act",
+                      desc: "Get plain-English explanations, concrete negotiation advice, and copy-ready revised clauses for anything flagged.",
                     },
                   ].map((item) => (
                     <div key={item.title} className="text-center">
-                      <span className="text-[28px] font-extrabold text-blue-900/20 dark:text-blue-400/20">
+                      <span className="text-[32px] font-extrabold text-blue-900/15 dark:text-blue-400/15">
                         {item.number}
                       </span>
-                      <h3 className="text-[15px] font-bold text-gray-800 dark:text-gray-200 mt-1">
+                      <h3 className="text-[17px] font-bold text-gray-800 dark:text-gray-200 mt-1">
                         {item.title}
                       </h3>
-                      <p className="text-[13px] text-gray-500 mt-2 leading-relaxed">
+                      <p className="text-[14px] text-gray-500 mt-2 leading-relaxed">
                         {item.desc}
                       </p>
                     </div>
@@ -533,8 +519,8 @@ export default function Home() {
               </div>
 
               {/* Trust bar */}
-              <div className="mt-12 text-center">
-                <p className="text-[11px] text-gray-400">
+              <div className="mt-14 text-center">
+                <p className="text-[12px] text-gray-400">
                   Standards sourced from{" "}
                   <span className="font-medium text-gray-500">Common Paper</span> and{" "}
                   <span className="font-medium text-gray-500">Bonterms</span>{" "}

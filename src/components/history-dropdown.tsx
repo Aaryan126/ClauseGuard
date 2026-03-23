@@ -96,7 +96,6 @@ export function HistoryDropdown({ onSelect }: HistoryDropdownProps) {
                   className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors cursor-pointer group border-b border-gray-50 dark:border-gray-900 last:border-b-0 disabled:opacity-50"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${worstDot(entry.report.summary)}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate">
                         {entry.isComparison ? `${entry.fileName} vs ${entry.fileNameB}` : entry.fileName}
@@ -105,21 +104,11 @@ export function HistoryDropdown({ onSelect }: HistoryDropdownProps) {
                         <span>{date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
                         <span>·</span>
                         {entry.isComparison ? (
-                          <span className="text-blue-900/60 font-medium">Comparison</span>
+                          <span className="text-blue-900/60 dark:text-blue-400/60 font-medium">Comparison</span>
                         ) : (
                           <span>{entry.report.totalClauses} clauses</span>
                         )}
-                        <span>·</span>
-                        <span className="flex items-center gap-1">
-                          {entry.report.summary.red > 0 && (
-                            <span className="text-red-500">{entry.report.summary.red}R</span>
-                          )}
-                          {entry.report.summary.yellow > 0 && (
-                            <span className="text-amber-500">{entry.report.summary.yellow}Y</span>
-                          )}
-                          <span className="text-emerald-500">{entry.report.summary.green}G</span>
-                        </span>
-                        {isLoading && <span className="text-blue-500">Loading...</span>}
+                        {isLoading && <span className="text-blue-500 ml-1">Loading...</span>}
                       </div>
                     </div>
                     <span
