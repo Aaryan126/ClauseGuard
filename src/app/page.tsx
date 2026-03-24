@@ -198,8 +198,13 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || "Analysis failed.");
+        const text = await response.text();
+        try {
+          const errData = JSON.parse(text);
+          throw new Error(errData.error || "Analysis failed.");
+        } catch {
+          throw new Error(text || "Analysis failed.");
+        }
       }
 
       const data = await consumeAnalysisStream(response);
@@ -288,8 +293,13 @@ export default function Home() {
         });
 
         if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || "Analysis failed.");
+          const text2 = await res.text();
+          try {
+            const errData = JSON.parse(text2);
+            throw new Error(errData.error || "Analysis failed.");
+          } catch {
+            throw new Error(text2 || "Analysis failed.");
+          }
         }
 
         return consumeAnalysisStream(res);

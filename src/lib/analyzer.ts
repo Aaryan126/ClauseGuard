@@ -1,4 +1,3 @@
-import { parseDocument } from "./parser";
 import { segmentClauses } from "./segmenter";
 import { getEmbeddings } from "./embeddings";
 import { findBestMatch } from "./comparison";
@@ -27,17 +26,6 @@ export async function analyzeText(
   return runAnalysisPipeline(text, contractType, onProgress);
 }
 
-// Analyze from file buffer (used for DOCX/TXT where server parses the file)
-export async function analyzeContract(
-  buffer: Buffer,
-  filename: string,
-  contractType: ContractType,
-  onProgress?: ProgressCallback
-): Promise<AnalysisReport> {
-  onProgress?.("Parsing document");
-  const text = await parseDocument(buffer, filename);
-  return runAnalysisPipeline(text, contractType, onProgress);
-}
 
 async function runAnalysisPipeline(
   text: string,
