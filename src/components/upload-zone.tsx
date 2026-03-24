@@ -2,16 +2,25 @@
 
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload } from "lucide-react";
+import { Upload, FileText, X } from "lucide-react";
 
 interface UploadZoneProps {
   onFileSelected: (file: File) => void;
   isAnalyzing: boolean;
   active?: boolean;
+  /** If true, shows the file after selection instead of immediately triggering action */
+  showSelected?: boolean;
 }
 
-export function UploadZone({ onFileSelected, isAnalyzing, active = false }: UploadZoneProps) {
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function UploadZone({ onFileSelected, isAnalyzing, active = false, showSelected = false }: UploadZoneProps) {
   const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -21,8 +30,8 @@ export function UploadZone({ onFileSelected, isAnalyzing, active = false }: Uplo
       const file = acceptedFiles[0];
       const ext = file.name.split(".").pop()?.toLowerCase();
 
-      if (!ext || !["pdf", "docx", "doc", "txt"].includes(ext)) {
-        setError("Please upload a PDF, DOCX, or TXT file.");
+      if (ext !== "pdf") {
+        setError("Please upload a PDF file.");
         return;
       }
 
@@ -31,22 +40,62 @@ export function UploadZone({ onFileSelected, isAnalyzing, active = false }: Uplo
         return;
       }
 
-      onFileSelected(file);
+      if (showSelected) {
+        setSelectedFile(file);
+        onFileSelected(file);
+      } else {
+        onFileSelected(file);
+      }
     },
-    [onFileSelected]
+    [onFileSelected, showSelected]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
       "application/pdf": [".pdf"],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-      "application/msword": [".doc"],
-      "text/plain": [".txt"],
     },
     maxFiles: 1,
     disabled: isAnalyzing,
+    noClick: !!selectedFile,
+    noDrag: !!selectedFile,
   });
+
+  const handleRemove = () => {
+    setSelectedFile(null);
+    setError(null);
+  };
+
+  // Show selected file state
+  if (selectedFile && showSelected) {
+    return (
+      <div className="rounded-lg border-2 border-blue-900/30 dark:border-blue-400/30 bg-blue-950/5 dark:bg-blue-900/10 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <FileText className="w-5 h-5 text-blue-900/60 dark:text-blue-400/60 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate">{selectedFile.name}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{formatSize(selectedFile.size)}</p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={(e) => { e.stopPropagation(); open(); }}
+              className="text-[11px] font-medium text-blue-900/60 hover:text-blue-900 dark:text-blue-400/60 dark:hover:text-blue-400 transition-colors cursor-pointer"
+            >
+              Replace
+            </button>
+            <button
+              onClick={handleRemove}
+              className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+        {/* Hidden dropzone for replace */}
+        <div {...getRootProps()} className="hidden"><input {...getInputProps()} /></div>
+      </div>
+    );
+  }
 
   return (
     <div>

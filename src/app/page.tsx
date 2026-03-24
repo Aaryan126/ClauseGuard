@@ -425,7 +425,7 @@ export default function Home() {
                     </p>
                     <UploadZone onFileSelected={handleFileSelected} isAnalyzing={false} active={!!contractType} />
                     <p className="text-[13px] text-gray-400 text-center mt-3">
-                      PDF, DOCX, or TXT — up to 10 MB
+                      PDF format, up to 10 MB
                     </p>
                   </div>
                 ) : (
@@ -443,10 +443,8 @@ export default function Home() {
                           onFileSelected={(f) => setCompareFileA(f)}
                           isAnalyzing={false}
                           active={!!contractType}
+                          showSelected
                         />
-                        {compareFileA && (
-                          <p className="text-[12px] text-emerald-600 truncate">{compareFileA.name}</p>
-                        )}
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 mb-2">
@@ -457,10 +455,8 @@ export default function Home() {
                           onFileSelected={(f) => setCompareFileB(f)}
                           isAnalyzing={false}
                           active={!!contractType}
+                          showSelected
                         />
-                        {compareFileB && (
-                          <p className="text-[12px] text-emerald-600 truncate">{compareFileB.name}</p>
-                        )}
                       </div>
                     </div>
                     {compareFileA && compareFileB && (
@@ -474,7 +470,7 @@ export default function Home() {
                       </div>
                     )}
                     <p className="text-[13px] text-gray-400 text-center mt-3">
-                      Same file format for both — PDF, DOCX, or TXT
+                      PDF format, up to 10 MB each
                     </p>
                   </div>
                 )}
@@ -490,21 +486,21 @@ export default function Home() {
                     {
                       number: "01",
                       title: "Compare",
-                      desc: "Each clause is matched against 68 lawyer-drafted standard templates and scored by AI for functional equivalence.",
+                      desc: "Each clause is embedded and compared against 68 standard templates using cosine similarity. A domain-expert AI then judges functional equivalence, replacing rigid thresholds with contextual legal reasoning.",
                     },
                     {
                       number: "02",
                       title: "Detect",
-                      desc: "15 pattern rules scan for aggressive terms — unlimited liability, blanket IP assignment, unilateral amendments, and more.",
+                      desc: "15 tiered pattern rules scan for aggressive language. Critical patterns like unlimited liability always flag red. Serious and caution tiers adjust based on how closely the clause matches the standard.",
                     },
                     {
                       number: "03",
                       title: "Act",
-                      desc: "Get plain-English explanations, concrete negotiation advice, and copy-ready revised clauses for anything flagged.",
+                      desc: "Flagged clauses get a plain-English explanation, a negotiation recommendation, and a copy-ready proposed revision with changes highlighted in bold.",
                     },
                   ].map((item) => (
                     <div key={item.title} className="text-center">
-                      <span className="text-[32px] font-extrabold text-blue-900/15 dark:text-blue-400/15">
+                      <span className="text-[32px] font-extrabold text-blue-900 dark:text-blue-400">
                         {item.number}
                       </span>
                       <h3 className="text-[17px] font-bold text-gray-800 dark:text-gray-200 mt-1">
@@ -521,10 +517,10 @@ export default function Home() {
               {/* Trust bar */}
               <div className="mt-14 text-center">
                 <p className="text-[12px] text-gray-400">
-                  Standards sourced from{" "}
+                  Built on open-source standards from{" "}
                   <span className="font-medium text-gray-500">Common Paper</span> and{" "}
-                  <span className="font-medium text-gray-500">Bonterms</span>{" "}
-                  — open-source, lawyer-drafted by committees of 40–120+ attorneys.
+                  <span className="font-medium text-gray-500">Bonterms</span>,
+                  {" "}drafted by committees of over 120 attorneys.
                 </p>
               </div>
             </div>
