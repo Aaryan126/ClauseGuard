@@ -21,11 +21,12 @@ export interface LLMScoreResult {
 export async function scoreClausesWithLLM(
   clauses: ExtractedClause[],
   bestMatches: (StandardClause | null)[],
-  similarities: number[]
+  similarities: number[],
+  onProgress?: (detail: string) => void
 ): Promise<LLMScoreResult[]> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
-  const BATCH_SIZE = 5;
+  const BATCH_SIZE = 3;
   const results: LLMScoreResult[] = new Array(clauses.length);
 
   for (let i = 0; i < clauses.length; i += BATCH_SIZE) {
@@ -33,6 +34,8 @@ export async function scoreClausesWithLLM(
       { length: Math.min(BATCH_SIZE, clauses.length - i) },
       (_, k) => i + k
     );
+
+    onProgress?.(`Scoring clause ${i + 1} of ${clauses.length}`);
 
     await Promise.all(
       batchIndices.map(async (idx) => {

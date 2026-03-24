@@ -5,5 +5,9 @@
 [build.environment]
   NODE_VERSION = "20"
 
+[functions]
+  # Extend function timeout to maximum allowed on free tier (26s default, streaming keeps alive)
+  node_bundler = "esbuild"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"

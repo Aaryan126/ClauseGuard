@@ -64,7 +64,9 @@ async function runAnalysisPipeline(
 
   // Step 4: LLM-based severity scoring
   onProgress?.("Scoring clauses with AI", `Evaluating ${clauses.length} clauses`);
-  const llmScores = await scoreClausesWithLLM(clauses, bestMatchStandards, similarities);
+  const llmScores = await scoreClausesWithLLM(clauses, bestMatchStandards, similarities, (detail) => {
+    onProgress?.("Scoring clauses with AI", detail);
+  });
 
   // Step 5: Run pattern rules on each clause
   onProgress?.("Checking for aggressive patterns");
@@ -95,7 +97,9 @@ async function runAnalysisPipeline(
   // Step 7: Get LLM explanations for flagged clauses only
   const flaggedCount = analyses.filter((a) => a.severity !== "green").length;
   onProgress?.("Generating explanations", `${flaggedCount} flagged clauses`);
-  await explainFlaggedClauses(analyses);
+  await explainFlaggedClauses(analyses, (detail) => {
+    onProgress?.("Generating explanations", detail);
+  });
 
   // Step 8: Detect missing clauses
   onProgress?.("Checking for missing clauses");

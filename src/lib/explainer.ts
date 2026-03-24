@@ -4,7 +4,8 @@ import { ClauseAnalysis, FlagSource } from "@/types";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function explainFlaggedClauses(
-  analyses: ClauseAnalysis[]
+  analyses: ClauseAnalysis[],
+  onProgress?: (detail: string) => void
 ): Promise<ClauseAnalysis[]> {
   const flagged = analyses.filter((a) => a.severity !== "green");
 
@@ -15,6 +16,7 @@ export async function explainFlaggedClauses(
   // Process flagged clauses in parallel with concurrency limit
   const BATCH_SIZE = 5;
   for (let i = 0; i < flagged.length; i += BATCH_SIZE) {
+    onProgress?.(`Explaining clause ${i + 1} of ${flagged.length}`);
     const batch = flagged.slice(i, i + BATCH_SIZE);
     await Promise.all(batch.map((analysis) => explainSingle(model, analysis)));
   }
