@@ -104,6 +104,45 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [zoomA, setZoomA] = useState(0.7);
   const [zoomB, setZoomB] = useState(0.7);
+  const [progressStep, setProgressStep] = useState<string>("");
+  const [progressDetail, setProgressDetail] = useState<string>("");
+
+  /** Consume an SSE stream from the analysis API. Returns the final report. */
+  async function consumeAnalysisStream(response: Response): Promise<AnalysisReport> {
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const dataLine = line.replace(/^data: /, "").trim();
+        if (!dataLine) continue;
+
+        try {
+          const event = JSON.parse(dataLine);
+          if (event.type === "progress") {
+            setProgressStep(event.step || "");
+            setProgressDetail(event.detail || "");
+          } else if (event.type === "complete") {
+            return event.report as AnalysisReport;
+          } else if (event.type === "error") {
+            throw new Error(event.error);
+          }
+        } catch (e) {
+          if (e instanceof SyntaxError) continue;
+          throw e;
+        }
+      }
+    }
+    throw new Error("Stream ended without a complete response.");
+  }
 
   useEffect(() => {
     if (view === "report" && report) {
@@ -145,33 +184,25 @@ export default function Home() {
     setFileType(ext);
 
     try {
-      let data: AnalysisReport;
+      setProgressStep("Extracting text from PDF");
+      setProgressDetail("");
 
-      if (ext === "pdf") {
-        const { extractPdfText } = await import("@/components/pdf-viewer");
-        const pdfText = await extractPdfText(url);
+      const { extractPdfText } = await import("@/components/pdf-viewer");
+      const pdfText = await extractPdfText(url);
 
-        const response = await fetch("/api/analyze-text", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: pdfText, contractType }),
-        });
+      setProgressStep("Starting analysis");
+      const response = await fetch("/api/analyze-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: pdfText, contractType }),
+      });
 
-        data = await response.json();
-        if (!response.ok) throw new Error(data && "error" in data ? (data as Record<string, string>).error : "Analysis failed.");
-      } else {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("contractType", contractType);
-
-        const response = await fetch("/api/analyze", {
-          method: "POST",
-          body: formData,
-        });
-
-        data = await response.json();
-        if (!response.ok) throw new Error(data && "error" in data ? (data as Record<string, string>).error : "Analysis failed.");
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Analysis failed.");
       }
+
+      const data = await consumeAnalysisStream(response);
 
       setReport(data);
       setView("report");
@@ -242,32 +273,30 @@ export default function Home() {
     setFileUrlB(urlB);
 
     try {
-      const analyzeFile = async (file: File): Promise<AnalysisReport> => {
-        if (ext === "pdf") {
-          const { extractPdfText } = await import("@/components/pdf-viewer");
-          const url = URL.createObjectURL(file);
-          const text = await extractPdfText(url);
-          URL.revokeObjectURL(url);
-          const res = await fetch("/api/analyze-text", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, contractType }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Analysis failed.");
-          return data;
-        } else {
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("contractType", contractType);
-          const res = await fetch("/api/analyze", { method: "POST", body: formData });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Analysis failed.");
-          return data;
+      const analyzeFile = async (file: File, label: string): Promise<AnalysisReport> => {
+        setProgressStep(`Extracting text from ${label}`);
+        const { extractPdfText } = await import("@/components/pdf-viewer");
+        const blobUrl = URL.createObjectURL(file);
+        const text = await extractPdfText(blobUrl);
+        URL.revokeObjectURL(blobUrl);
+
+        setProgressStep(`Analyzing ${label}`);
+        const res = await fetch("/api/analyze-text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, contractType }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || "Analysis failed.");
         }
+
+        return consumeAnalysisStream(res);
       };
 
-      const [rA, rB] = await Promise.all([analyzeFile(compareFileA), analyzeFile(compareFileB)]);
+      const rA = await analyzeFile(compareFileA, "Old Version");
+      const rB = await analyzeFile(compareFileB, "New Version");
       setReportA(rA);
       setReportB(rB);
       setView("compare-report");
@@ -528,7 +557,7 @@ export default function Home() {
 
           {view === "analyzing" && (
             <div className="max-w-5xl mx-auto px-4 py-8">
-              <AnalysisProgress />
+              <AnalysisProgress step={progressStep} detail={progressDetail} />
             </div>
           )}
 

@@ -16,71 +16,81 @@ const CONTRACT_TYPE_LABELS: Record<ContractType, string> = {
   consulting: "Consulting / Professional Services Agreement",
 };
 
+export type ProgressCallback = (step: string, detail?: string) => void;
+
 // Analyze from pre-extracted text (used for PDFs where client extracts text via pdfjs)
 export async function analyzeText(
   text: string,
-  contractType: ContractType
+  contractType: ContractType,
+  onProgress?: ProgressCallback
 ): Promise<AnalysisReport> {
-  return runAnalysisPipeline(text, contractType);
+  return runAnalysisPipeline(text, contractType, onProgress);
 }
 
 // Analyze from file buffer (used for DOCX/TXT where server parses the file)
 export async function analyzeContract(
   buffer: Buffer,
   filename: string,
-  contractType: ContractType
+  contractType: ContractType,
+  onProgress?: ProgressCallback
 ): Promise<AnalysisReport> {
+  onProgress?.("Parsing document");
   const text = await parseDocument(buffer, filename);
-  return runAnalysisPipeline(text, contractType);
+  return runAnalysisPipeline(text, contractType, onProgress);
 }
 
 async function runAnalysisPipeline(
   text: string,
-  contractType: ContractType
+  contractType: ContractType,
+  onProgress?: ProgressCallback
 ): Promise<AnalysisReport> {
+  onProgress?.("Extracting clauses");
   const clauses = segmentClauses(text);
 
   if (clauses.length === 0) {
     throw new Error("No clauses could be extracted from the document.");
   }
 
+  onProgress?.("Loading standards", `${clauses.length} clauses found`);
+
   // Step 1: Load standard clauses filtered by contract type
   const allStandards = await loadStandards();
   const standards = allStandards.filter((s) => s.contractType === contractType);
 
   // Step 2: Generate embeddings for all extracted clauses
+  onProgress?.("Generating embeddings", `Embedding ${clauses.length} clauses`);
   const clauseTexts = clauses.map((c) => c.text);
   const embeddings = await getEmbeddings(clauseTexts);
 
   // Step 3: Find best embedding match for each clause
+  onProgress?.("Matching against standards");
   const matchResults = clauses.map((_, i) => findBestMatch(embeddings[i], standards));
   const bestMatchStandards = matchResults.map((m) => m?.standardClause ?? null);
   const similarities = matchResults.map((m) => m?.similarity ?? 0);
 
-  // Debug: log similarity scores for each clause
+  // Debug: log similarity scores
   clauses.forEach((c, i) => {
     const matchName = bestMatchStandards[i]?.clauseName ?? "none";
     console.log(`[ClauseGuard] Clause "${c.title}" → ${(similarities[i] * 100).toFixed(1)}% similar to "${matchName}"`);
   });
 
-  // Step 4: LLM-based severity scoring (replaces rigid cosine thresholds)
+  // Step 4: LLM-based severity scoring
+  onProgress?.("Scoring clauses with AI", `Evaluating ${clauses.length} clauses`);
   const llmScores = await scoreClausesWithLLM(clauses, bestMatchStandards, similarities);
 
   // Step 5: Run pattern rules on each clause
+  onProgress?.("Checking for aggressive patterns");
   const allRuleHits = clauses.map((clause) => checkAggressivePatterns(clause.text));
 
   // Step 6: Combine LLM severity + rule hits, filtering out non-clauses
   const analyses: ClauseAnalysis[] = [];
   for (let i = 0; i < clauses.length; i++) {
     const llmScore = llmScores[i];
-
-    // LLM identified this as a signature block, header, or other non-clause — skip it
     if (llmScore.severity === "skip") continue;
 
     const similarity = similarities[i];
     const bestMatch = matchResults[i];
     const ruleHits = allRuleHits[i];
-
     const { severity, flagSource } = combineSeverity(llmScore.severity, ruleHits);
 
     analyses.push({
@@ -95,12 +105,16 @@ async function runAnalysisPipeline(
   }
 
   // Step 7: Get LLM explanations for flagged clauses only
+  const flaggedCount = analyses.filter((a) => a.severity !== "green").length;
+  onProgress?.("Generating explanations", `${flaggedCount} flagged clauses`);
   await explainFlaggedClauses(analyses);
 
   // Step 8: Detect missing clauses
+  onProgress?.("Checking for missing clauses");
   const missingClauses = await detectMissingClauses(analyses, standards, contractType, text);
 
   // Step 9: Build the report
+  onProgress?.("Building report");
   const severities = analyses.map((a) => a.severity);
   const summary = {
     green: severities.filter((s) => s === "green").length,
