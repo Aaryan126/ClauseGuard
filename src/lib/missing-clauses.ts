@@ -109,7 +109,7 @@ async function verifyMissingWithLLM(
   candidates: { category: string; importance: "high" | "medium" | "low"; clauseName: string; summary: string }[],
   rawText: string
 ): Promise<MissingClause[]> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const candidateList = candidates
     .map((c, i) => `${i + 1}. "${c.clauseName}" — ${c.summary}`)
